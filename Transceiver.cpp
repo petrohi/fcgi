@@ -32,7 +32,7 @@ namespace fcgi {
 
     void Transceiver::evRead(ev::io &watcher, int revents)
     {
-		// stop reader notifications
+        // stop reader notifications
         EvIOLock lock(watcher);
 
         // keep it to make sure to exists till the end.
@@ -42,18 +42,18 @@ namespace fcgi {
 
         try {
             while (!_readBuffer.is_complete()) {
-				size_t aread = readdata(_readBuffer.ptr(), _readBuffer.expect());
-				if (aread==0)
-					return;
-				_readBuffer.update(aread);
-			}
-			{
-				boost::shared_ptr<Message> msg(new Message(_fd, _readBuffer));
-				_manager.handle(This, msg);
-			}
-			// release buffer
-			_readBuffer.reset();
-		}
+                size_t aread = readdata(_readBuffer.ptr(), _readBuffer.expect());
+                if (aread==0)
+                    return;
+                _readBuffer.update(aread);
+            }
+            {
+                boost::shared_ptr<Message> msg(new Message(_fd, _readBuffer));
+                _manager.handle(This, msg);
+            }
+            // release buffer
+            _readBuffer.reset();
+        }
         catch (const Exceptions::Socket& ex) {
             std::cout << "FD "<<_fd<<" Exception " << ex.what() << std::endl;
             exit(-1);
@@ -108,50 +108,39 @@ namespace fcgi {
             }
             while(!_queue.empty()) {
                 blk=_queue.front();
-                size_t offset;
-                const char* ptr;
-                if (_writeHeader) {
-                    offset=blk->getHeader().size()-_expectWrite;
-                    ptr=blk->getHeader().data()+offset;
-                }
-                else {
-                    offset=blk->getData().size()-_expectWrite;
-                    ptr=blk->getData().data()+offset;
-                }
+                while (!_expectWrite==0) {
+                    const char* ptr;
+                    if (_writeHeader)
+                        ptr=blk->getHeader().data()+(blk->getHeader().size()-_expectWrite);
+                    else
+                        ptr=blk->getData().data()+(blk->getData().size()-_expectWrite);
 
-                std::cout<<"DATA"<<std::endl;
-                for (int i=0; i<_expectWrite; ++i)
-                    std::cout<<" "<<(int)(*((uint8_t*)ptr+i));
-                std::cout<<std::endl;
+                    size_t awrite=write(_fd, ptr, _expectWrite);
+                    int erno = errno;
+                    std::cout << "evwrite "<<_fd<<" size "<<_expectWrite
+                              <<" written "<<awrite<<std::endl;
 
-                int result = write(_fd, ptr, _expectWrite);
-                int erno = errno;
-                std::cout << "evwrite "<<_fd<<" size "<<_expectWrite
-                          <<" written "<<result<<std::endl;
-
-                if (result!=-1) {
-                    _expectWrite-=result;
-                    if (_expectWrite==0) {
-                        if (_writeHeader) {
-                            _writeHeader=false;
+                    if (awrite!=-1) {
+                        _expectWrite-=awrite;
+                        if (_expectWrite==0 && _writeHeader) {
                             _expectWrite=blk->getData().size();
-                        }
-                        else {
-                            _queue.pop();
-                            writeHead();
+                            _writeHeader=false;
                         }
                     }
+                    else {
+                        if (erno == EAGAIN)
+                            return;
+                        throw Exceptions::SocketWrite(_fd, erno);
+                    }
                 }
-                else {
-                    if (erno == EAGAIN)
-                        return;
-                    throw Exceptions::SocketWrite(_fd, erno);
-                }
+                _queue.pop();
+                writeHead();
             }
             _wev.stop();
         }
         catch (const Exceptions::SocketWrite& ex) {
         }
+         
     }
 
     void Transceiver::requestComplete(uint32_t status, uint32_t fullId, bool keepConnection)

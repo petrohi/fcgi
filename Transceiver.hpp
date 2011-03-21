@@ -21,46 +21,46 @@
 
 namespace fcgi
 {
-	class Message;
-	class Buffer : boost::noncopyable
-	{
-	public:
-		Buffer() :
-			_expect(sizeof(RecordHeader)), _isHeader(true) {}
+    class Message;
+    class Buffer : boost::noncopyable
+    {
+    public:
+        Buffer() :
+            _expect(sizeof(RecordHeader)), _isHeader(true) {}
 
-		char* ptr() const {
-			if (_isHeader) {
-				return (char*)(&_header)+(sizeof(RecordHeader)-_expect);
-			}
-			else {
-				return static_cast<char*>(_data.get())+(_header.recordLength()-_expect);
-			}
-		}
+        char* ptr() const {
+            if (_isHeader) {
+                return (char*)(&_header)+(sizeof(RecordHeader)-_expect);
+            }
+            else {
+                return static_cast<char*>(_data.get())+(_header.recordLength()-_expect);
+            }
+        }
 
-		size_t expect() const { return _expect; }
-		bool is_complete() const { return (_expect==0); }
+        size_t expect() const { return _expect; }
+        bool is_complete() const { return (_expect==0); }
 
-		void update(size_t aread) {
-			_expect-=aread;
-			if (_expect==0 && _isHeader) {
-				std::cout << "header "; _header.print(std::cout);
-				_isHeader=false;
-				_expect=_header.recordLength();
-				_data.reset(new char[_expect]);
-			}
-		}
+        void update(size_t aread) {
+            _expect-=aread;
+            if (_expect==0 && _isHeader) {
+                std::cout << "header "; _header.print(std::cout);
+                _isHeader=false;
+                _expect=_header.recordLength();
+                _data.reset(new char[_expect]);
+            }
+        }
 
-		void reset() { _isHeader=true; _expect=sizeof(RecordHeader); _data.reset(); }
+        void reset() { _isHeader=true; _expect=sizeof(RecordHeader); _data.reset(); }
 
-		const RecordHeader& getHeader() const { return _header; }
-		boost::shared_array<char>& getData() const { return _data; }
+        const RecordHeader& getHeader() const { return _header; }
+        boost::shared_array<char>& getData() const { return _data; }
 
-	private:
-		size_t _expect;
-		bool   _isHeader;
-	    RecordHeader                       _header;
-		mutable boost::shared_array<char>  _data;
-	};
+    private:
+        size_t _expect;
+        bool   _isHeader;
+        RecordHeader                       _header;
+        mutable boost::shared_array<char>  _data;
+    };
 
     class ManagerHandle;
     class Transceiver : public boost::enable_shared_from_this<Transceiver>
@@ -154,6 +154,5 @@ namespace fcgi
         RecordType _type;
         boost::shared_array<char> _data;
     };
-
 }
 #endif
