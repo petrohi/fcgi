@@ -21,65 +21,46 @@
 
 namespace fcgi
 {
-    class Buffer : boost::noncopyable
-    {
-    public:
-        Buffer() : _expect(0) {}
+	class Message;
+	class Buffer : boost::noncopyable
+	{
+	public:
+		Buffer() :
+			_expect(sizeof(RecordHeader)), _isHeader(true) {}
 
-        char* ptr() const {
-            return static_cast<char*>(_data.get())+(_header->recordLength()-_expect);
-        }
-        
-        size_t expect() const { return _expect; }
-        bool is_complete() const { return (_expect==0); }
-        void update(size_t aread) { _expect-=aread; }
+		char* ptr() const {
+			if (_isHeader) {
+				return (char*)(&_header)+(sizeof(RecordHeader)-_expect);
+			}
+			else {
+				return static_cast<char*>(_data.get())+(_header.recordLength()-_expect);
+			}
+		}
 
-        void clear() { _header.reset(); _expect=0; _data.reset(); }
-        void setHeader(boost::shared_ptr<RecordHeader> &header) {
-            _header=header;
-            _expect=_header->recordLength();
-            _data.reset(new char[_expect]);
-        }
+		size_t expect() const { return _expect; }
+		bool is_complete() const { return (_expect==0); }
 
-        friend struct Message;
+		void update(size_t aread) {
+			_expect-=aread;
+			if (_expect==0 && _isHeader) {
+				std::cout << "header "; _header.print(std::cout);
+				_isHeader=false;
+				_expect=_header.recordLength();
+				_data.reset(new char[_expect]);
+			}
+		}
 
-    private:
-        size_t _expect;
-        boost::shared_ptr<RecordHeader> _header;
-        boost::shared_array<char> _data;
-    };
+		void reset() { _isHeader=true; _expect=sizeof(RecordHeader); _data.reset(); }
 
-    class Message : boost::noncopyable
-    {
-    public:
-        Message(uint32_t fd, Buffer& buffer) 
-            : _fd(fd),
-              _requestId(buffer._header->requestId()),
-              _size(buffer._header->contentLength()),
-              _type(buffer._header->type()),
-              _data(buffer._data)
-        {}
+		const RecordHeader& getHeader() const { return _header; }
+		boost::shared_array<char>& getData() const { return _data; }
 
-        uint32_t getFd() const { return _fd; }
-        uint32_t getId() const { return constructFullId(_fd, _requestId); }
-        uint16_t requestId() const { return _requestId; }
-        
-        uint16_t type() const { return _type; }
-        uint32_t size() const { return static_cast<uint32_t>(_size); }
-
-        template<typename Type>
-        const Type* getData() const {
-            return (const Type*)(_data.get());
-        }
-
-    private:
-        uint32_t   _fd;
-        uint16_t   _requestId;
-        uint16_t   _size;
-        RecordType _type;
-        boost::shared_array<char> _data;
-    };
-
+	private:
+		size_t _expect;
+		bool   _isHeader;
+	    RecordHeader                       _header;
+		mutable boost::shared_array<char>  _data;
+	};
 
     class ManagerHandle;
     class Transceiver : public boost::enable_shared_from_this<Transceiver>
@@ -122,28 +103,56 @@ namespace fcgi
             ev::io& _watcher;
         };
 
+
         void evRead(ev::io &watcher, int revents);
-        bool readHeader();
-        bool readRecord();
+        void evWrite(ev::io &watcher, int wevents);
+
         size_t readdata(void* ptr, size_t expect);
         void writeHead();
-
-        void evWrite(ev::io &watcher, int wevents);
 
         ManagerHandle&  _manager;
         int             _fd;
         struct ev_loop* _loop;
+
         ev::io          _rev;
         ev::io          _wev;
-        bool            _acceptor;
-        bool            _is_header;
+
         bool            _writeHeader;
-        size_t          _expectRead;
         size_t          _expectWrite;
 
-        boost::shared_ptr<RecordHeader> _header;
-        Buffer          _buffer;
+        Buffer          _readBuffer;
         std::queue<boost::shared_ptr<Block> > _queue;
+    };
+
+    class Message : boost::noncopyable
+    {
+    public:
+        Message(uint32_t fd, const Buffer& buffer) 
+            : _fd(fd),
+              _requestId(buffer.getHeader().requestId()),
+              _size(buffer.getHeader().contentLength()),
+              _type(buffer.getHeader().type()),
+              _data(buffer.getData())
+        {}
+
+        uint32_t getFd() const { return _fd; }
+        uint32_t getId() const { return constructFullId(_fd, _requestId); }
+        uint16_t requestId() const { return _requestId; }
+        
+        uint16_t type() const { return _type; }
+        uint32_t size() const { return static_cast<uint32_t>(_size); }
+
+        template<typename Type>
+        const Type* getData() const {
+            return (const Type*)(_data.get());
+        }
+
+    private:
+        uint32_t   _fd;
+        uint16_t   _requestId;
+        uint16_t   _size;
+        RecordType _type;
+        boost::shared_array<char> _data;
     };
 
 }

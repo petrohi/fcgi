@@ -8,10 +8,7 @@ namespace fcgi {
     Transceiver::Transceiver(ManagerHandle& manager, int fd) :
         _manager(manager),
         _fd(fd),
-        _loop(EV_DEFAULT),
-        _is_header(true),
-        _expectRead(sizeof(RecordHeader)),
-        _header(new RecordHeader())
+        _loop(EV_DEFAULT)
     {
         nonblock(_fd);
         _rev.set < ThisType, &ThisType::evRead  > (this);
@@ -33,66 +30,34 @@ namespace fcgi {
         close();
     }
 
-    void Transceiver::resetReadHeader()
-    {
-        _header.reset(new RecordHeader());
-        _expectRead=sizeof(RecordHeader);
-        _is_header=true;
-    }
-
     void Transceiver::evRead(ev::io &watcher, int revents)
     {
+		// stop reader notifications
+        EvIOLock lock(watcher);
+
         // keep it to make sure to exists till the end.
         boost::shared_ptr<ThisType> This(this->shared_from_this());
 
         std::cout << "evRead "<<_fd<<std::endl;
-        EvIOLock lock(watcher);
 
         try {
-            if (_is_header) {
-                if (!readHeader())
-                    return;
-                // init the buffer
-                _buffer.setHeader(_header);
-                std::cout << "header "; _header->print(std::cout);
-            }
-            if (readRecord()) {
-                {
-                    boost::shared_ptr<Message> msg(new Message(_fd, _buffer));
-                    _manager.handle(This, msg);
-                }
-                // release buffer
-                // _buffer.clear();
-                resetReadHeader();
-            }
-        }
+            while (!_readBuffer.is_complete()) {
+				size_t aread = readdata(_readBuffer.ptr(), _readBuffer.expect());
+				if (aread==0)
+					return;
+				_readBuffer.update(aread);
+			}
+			{
+				boost::shared_ptr<Message> msg(new Message(_fd, _readBuffer));
+				_manager.handle(This, msg);
+			}
+			// release buffer
+			_readBuffer.reset();
+		}
         catch (const Exceptions::Socket& ex) {
             std::cout << "FD "<<_fd<<" Exception " << ex.what() << std::endl;
             exit(-1);
         }
-    }
-
-    bool Transceiver::readHeader()
-    {
-        size_t aread = readdata(_header.get()+(sizeof(RecordHeader)-_expectRead), _expectRead);
-        if (aread==_expectRead) {
-            _is_header=false;
-            return true;
-        }
-        else {
-            _expectRead-=aread;
-            return false;
-        }
-    }
-
-    bool Transceiver::readRecord()
-    {
-        std::cout << "read RecordBody size " << _buffer.expect() << std::endl;
-        if (_buffer.expect()>0) {
-            size_t aread = readdata(_buffer.ptr(), _buffer.expect());
-            _buffer.update(aread);
-        }
-        return _buffer.is_complete();
     }
 
     size_t Transceiver::readdata(void* ptr, size_t expect)
