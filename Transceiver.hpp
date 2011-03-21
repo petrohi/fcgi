@@ -76,7 +76,7 @@ namespace fcgi
 
         void close();
 
-        void writeStream(uint16_t id, std::string& str, bool isOut=true);
+        //        void writeStream(uint16_t id, std::string& str, bool isOut=true);
         void writeBlock(boost::shared_ptr<Block> &blk);
 
     private:

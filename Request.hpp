@@ -7,8 +7,10 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/iostreams/stream.hpp>
 
 #include "Transceiver.hpp"
+#include "FcgiSink.hpp"
 
 namespace fcgi
 {
@@ -17,8 +19,11 @@ namespace fcgi
     {
     public:
         RequestBase(boost::shared_ptr<Transceiver> &tr) :
+            _ostream(*this, true),
+            _estream(*this, false),
             _tr(tr), _id(0)
         {}
+
         uint32_t getFd() const { return (_id >> 16) & 0x7fff; }
         uint32_t getId() const { return _id; }
         uint16_t getRequestId() const { return static_cast<uint16_t>(0xffff & _id); }
@@ -32,10 +37,20 @@ namespace fcgi
         void requestComplete(uint32_t status);
 
     protected:
+        typedef boost::iostreams::stream<FcgiSink> Stream;
+
+        friend class FcgiSink;
+
+        void flush(boost::shared_ptr<Block> &blk);
         void flushStreams();
+
+        boost::shared_ptr<Block>  _outStreamBlk;
+        boost::shared_ptr<Block>  _errStreamBlk;
+        Stream           _ostream;
+        Stream           _estream;
+
         boost::shared_ptr<Transceiver> _tr;
-        std::ostringstream _ostream;
-        std::ostringstream _estream;
+
         uint32_t     _id;
         Role         _role;
         uint8_t      _flags;

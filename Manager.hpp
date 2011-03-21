@@ -78,9 +78,9 @@ namespace fcgi
                                                boost::shared_ptr<HandlerType> > RequestsType;
         
         Manager() :
-			_maxConns(100), _maxReqs(100), _mpxsConns(10),
-			_acceptor(*this, 0)
-		{}
+            _maxConns(100), _maxReqs(100), _mpxsConns(10),
+            _acceptor(*this, 0)
+        {}
         
         virtual void handle(boost::shared_ptr<Transceiver> &tr,
                             boost::shared_ptr<Message> &message)
@@ -129,7 +129,8 @@ namespace fcgi
                 break;
             }
         }
-        void processGetValues(boost::shared_ptr<Transceiver> &tr, boost::shared_ptr<Message> &message)
+        void processGetValues(boost::shared_ptr<Transceiver> &tr,
+                              boost::shared_ptr<Message> &message)
         {
             size_t size=message->size();
             if (size) {
@@ -143,19 +144,22 @@ namespace fcgi
                     i+=getNVLength(data+i, nameLen);
                     i+=getNVLength(data+i, valueLen);
                     if (valueLen==0 && nameLen>0 && i+nameLen <= size) {
-                        if (fcgiMaxConns.length()==nameLen && !memcmp(data+i, fcgiMaxConns.c_str(), nameLen)) {
+                        if (fcgiMaxConns.length()==nameLen &&
+                            !memcmp(data+i, fcgiMaxConns.c_str(), nameLen)) {
                             std::ostringstream reply; reply << _maxConns;
                             buffer+=(char)nameLen + (char)(reply.str().size());
                             buffer+=fcgiMaxConns;
                             buffer+=reply.str();
                         }
-                        if (fcgiMaxReqs.length()==nameLen && !memcmp(data+i, fcgiMaxReqs.c_str(), nameLen)) {
+                        if (fcgiMaxReqs.length()==nameLen &&
+                            !memcmp(data+i, fcgiMaxReqs.c_str(), nameLen)) {
                             std::ostringstream reply; reply << _maxReqs;
                             buffer+=(char)nameLen + (char)(reply.str().size());
                             buffer+=fcgiMaxReqs;
                             buffer+=reply.str();
                         }
-                        if (fcgiMpxsConns.length()==nameLen && !memcmp(data+i, fcgiMpxsConns.c_str(), nameLen)) {
+                        if (fcgiMpxsConns.length()==nameLen &&
+                            !memcmp(data+i, fcgiMpxsConns.c_str(), nameLen)) {
                             std::ostringstream reply; reply << _mpxsConns;
                             buffer+=(char)nameLen + (char)(reply.str().size());
                             buffer+=fcgiMpxsConns;

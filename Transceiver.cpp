@@ -55,8 +55,8 @@ namespace fcgi {
             _readBuffer.reset();
         }
         catch (const Exceptions::Socket& ex) {
-            std::cout << "FD "<<_fd<<" Exception " << ex.what() << std::endl;
-            exit(-1);
+            std::cout << "evRead FD="<<_fd<<" Exception " << ex.what() << std::endl;
+            // TODO: pass an error to the Manager
         }
     }
 
@@ -139,8 +139,9 @@ namespace fcgi {
             _wev.stop();
         }
         catch (const Exceptions::SocketWrite& ex) {
+            std::cout << "evWrite, FD="<<_fd<<" Exception " << ex.what() << std::endl;
+            // TODO: pass an error to the Manager
         }
-         
     }
 
     void Transceiver::requestComplete(uint32_t status, uint32_t fullId, bool keepConnection)
@@ -152,6 +153,7 @@ namespace fcgi {
         _manager.requestComplete(status, fullId, keepConnection);
     }
 
+#if 0
     void Transceiver::writeStream(uint16_t id, std::string& str, bool isOut)
     {
         size_t left = str.size();
@@ -161,5 +163,6 @@ namespace fcgi {
             writeBlock(data);
         }
     }
+#endif
 
 }

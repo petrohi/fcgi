@@ -17,16 +17,20 @@ namespace fcgi {
         _tr->requestComplete(status, getId(), isKeepConnection());
     }
 
+    void RequestBase::flush(boost::shared_ptr<Block> &blk)
+    {
+        if (blk.get() && blk->getRecordHeader()->contentLength()>0) {
+            _tr->writeBlock(blk);
+            blk.reset();
+        }
+    }
+
     void RequestBase::flushStreams()
     {
-        if (!_ostream.str().empty()) {
-            std::string buf(_ostream.str());
-            _tr->writeStream(getRequestId(), buf, true);
-        }
-        if (!_estream.str().empty()) {
-            std::string buf(_estream.str());
-            _tr->writeStream(getRequestId(), buf, false);
-        }
+        _ostream.flush();
+        _estream.flush();
+        flush(_outStreamBlk);
+        flush(_errStreamBlk);
     }
 
     size_t getNVLength(const char* data, uint32_t& len) {

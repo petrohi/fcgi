@@ -1,6 +1,7 @@
 #ifndef _FCGI_Protocol_h_
 #define _FCGI_Protocol_h_
 
+#include <iostream>
 #include <boost/noncopyable.hpp>
 #include <netinet/in.h>
 
