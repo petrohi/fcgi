@@ -15,7 +15,7 @@ namespace fcgi {
         _wev.set < ThisType, &ThisType::evWrite > (this);
         _rev.start(_fd, ev::READ);
         _wev.set(_fd, ev::WRITE); // do not start
-        std::cout << "Transceiver::new transceiver " << _fd << std::endl;
+        // std::cout << "Transceiver::new transceiver " << _fd << std::endl;
     }
 
     void Transceiver::close() {
@@ -38,7 +38,7 @@ namespace fcgi {
         // keep it to make sure to exists till the end.
         boost::shared_ptr<ThisType> This(this->shared_from_this());
 
-        std::cout << "evRead "<<_fd<<std::endl;
+        // std::cout << "evRead "<<_fd<<std::endl;
 
         try {
             while (!_readBuffer.is_complete()) {
@@ -55,8 +55,7 @@ namespace fcgi {
             _readBuffer.reset();
         }
         catch (const Exceptions::Socket& ex) {
-            std::cout << "evRead FD="<<_fd<<" Exception " << ex.what() << std::endl;
-            // TODO: pass an error to the Manager
+            _manager.readError(ex);
         }
     }
 
@@ -66,14 +65,14 @@ namespace fcgi {
         int erno=errno;
 
         if (result>0) {
-            std::cout << "read got " << result << " expected "<< expect << std::endl;
+            // std::cout << "read got " << result << " expected "<< expect << std::endl;
             if (result<=expect) {
                 return result;
             }
             assert(result<=expect); // read more than asked.
         }
         else {
-            std::cout << "read got error " << erno << std::endl;
+            // std::cout << "read got error " << erno << std::endl;
             if (erno==EAGAIN || erno==EWOULDBLOCK)
                 return 0;
             throw Exceptions::SocketRead(_fd, erno);
@@ -94,13 +93,12 @@ namespace fcgi {
         if (was_empty) {
             writeHead();
             _wev.start();
-            std::cout << "writeBlock"<<std::endl;
+            // std::cout << "writeBlock"<<std::endl;
         }
     }
 
     void Transceiver::evWrite(ev::io &watcher, int wevents) {
         boost::shared_ptr<Block> blk;
-        std::cout << "evwrite "<<_fd<<std::endl;
         try {
             if (_queue.empty()) {
                 _wev.stop();
@@ -117,8 +115,8 @@ namespace fcgi {
 
                     size_t awrite=write(_fd, ptr, _expectWrite);
                     int erno = errno;
-                    std::cout << "evwrite "<<_fd<<" size "<<_expectWrite
-                              <<" written "<<awrite<<std::endl;
+                    // std::cout << "evwrite "<<_fd<<" size "<<_expectWrite
+                    //          <<" written "<<awrite<<std::endl;
 
                     if (awrite!=-1) {
                         _expectWrite-=awrite;
@@ -139,30 +137,17 @@ namespace fcgi {
             _wev.stop();
         }
         catch (const Exceptions::SocketWrite& ex) {
-            std::cout << "evWrite, FD="<<_fd<<" Exception " << ex.what() << std::endl;
-            // TODO: pass an error to the Manager
+            _manager.writeError(ex);
         }
     }
 
-    void Transceiver::requestComplete(uint32_t status, uint32_t fullId, bool keepConnection)
+    void Transceiver::requestComplete(uint32_t status, uint16_t id, bool keepConnection)
     {
         boost::shared_ptr<Block>
-            reply(Block::endRequest(status, static_cast<uint16_t>(0xffff&fullId), REQUEST_COMPLETE));
+            reply(Block::endRequest(status, id, REQUEST_COMPLETE));
         reply->owner()=shared_from_this();
         writeBlock(reply);
-        _manager.requestComplete(status, fullId, keepConnection);
+        _manager.requestComplete(status, _fd, id, keepConnection);
     }
-
-#if 0
-    void Transceiver::writeStream(uint16_t id, std::string& str, bool isOut)
-    {
-        size_t left = str.size();
-        if (left <= (65536 - sizeof(RecordHeader))) {
-            boost::shared_ptr<Block> data(Block::stream(id, str, isOut));
-            data->owner()=shared_from_this();
-            writeBlock(data);
-        }
-    }
-#endif
 
 }

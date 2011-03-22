@@ -15,7 +15,7 @@ namespace fcgi
     {
         typedef Acceptor<ManagerT> ThisType;
     public:
-        Acceptor(ManagerT& manager, int fd)
+        Acceptor(ManagerT& manager, uint32_t fd)
             : _manager(manager), _fd(fd)
         {
             _rev.set < ThisType, &ThisType::evRead  > (this);
@@ -24,7 +24,7 @@ namespace fcgi
 
     private:
         ManagerT& _manager;
-        int       _fd;
+        uint32_t  _fd;
         ev::io    _rev;
 
         void evRead(ev::io &watcher, int revents)
@@ -42,7 +42,7 @@ namespace fcgi
                     if (fd==-1) {
                         if (erno==EAGAIN || erno==EWOULDBLOCK)
                             return;
-                        throw Exceptions::SocketAccept(_fd,erno);
+                        throw Exceptions::SocketAccept(_fd, erno);
                     }
                     else {
                         // notify that we have a new connection
@@ -51,6 +51,7 @@ namespace fcgi
                 }
             }
             catch (const Exceptions::Socket& ex) {
+                _manager.acceptError(ex);
             }
         }
     };
@@ -61,7 +62,12 @@ namespace fcgi
         virtual void handle(boost::shared_ptr<Transceiver> &tr,
                             boost::shared_ptr<Message> &message)=0;
 
-        virtual void requestComplete(uint32_t status, uint32_t fullId, bool keepConnection)=0;
+        virtual void requestComplete(uint32_t status, uint32_t fd,
+                                     uint16_t id, bool keepConnection)=0;
+
+        virtual void acceptError(const Exceptions::Socket& ex) =0;
+        virtual void readError(const Exceptions::Socket& ex) =0;
+        virtual void writeError(const Exceptions::Socket& ex) =0;
     };
     
     template<typename AppHandlerT>
@@ -74,61 +80,102 @@ namespace fcgi
         typedef RequestHandler<AppHandlerType>                   HandlerType;
         
         typedef typename std::map< uint32_t, boost::shared_ptr<Transceiver> >   ConnsType;
-        typedef typename boost::unordered_map< uint32_t,
-                                               boost::shared_ptr<HandlerType> > RequestsType;
+        typedef typename boost::unordered_map< uint16_t,
+                                               boost::shared_ptr<HandlerType> > RequestsMap;
+        typedef typename std::map< uint32_t, RequestsMap > RequestsType;
         
-        Manager() :
+        Manager(uint32_t fd=0) :
             _maxConns(100), _maxReqs(100), _mpxsConns(10),
-            _acceptor(*this, 0)
+            _acceptor(*this, fd)
         {}
+
+        void removeAll(uint32_t fd) {
+        }
         
         virtual void handle(boost::shared_ptr<Transceiver> &tr,
                             boost::shared_ptr<Message> &message)
         {
             RecordType type = static_cast<RecordType>(message->type());
-            uint32_t reqId = message->getId();
-            typename RequestsType::iterator rIt(_reqs.find(reqId));
+            uint32_t fd = message->getFd();
+            uint16_t id = message->getId();
 
-            std::cout<<"Message type "<<type<<" id "<< (0xffff & reqId)
-                     <<(rIt==_reqs.end() ? " NOT FOUND" : " FOUND")<<std::endl;
+            typename RequestsType::iterator mIt=_reqs.find(fd), mEnd=_reqs.end();
+            typename RequestsMap::iterator  rIt,rEnd;
+            bool isReqs=false;
+
+            if (mIt!=mEnd) {
+                rIt=(*mIt).second.find(id);
+                rEnd=(*mIt).second.end();
+                isReqs=true;
+            }
+
+            //std::cout<<"FD="<<fd<<" Message type="<<type<<" id="<< id
+            //         <<((isReqs && rIt!=rEnd)  ? " FOUND" : " NOT FOUND")<<std::endl;
 
             switch (type) {
             case BEGIN_REQUEST :
-                if (rIt==_reqs.end()) {
+                if (isReqs && rIt==mIt->second.end()) {
                     boost::shared_ptr<HandlerType> rq(new HandlerType(tr,message));
-                    _reqs.insert(make_pair(reqId, rq));
-                }
-                else {
-                    // already exists!!!
+                    mIt->second.insert(make_pair(id, rq));
                 }
                 break;
             case PARAMS:
-                if (rIt!=_reqs.end()) {
+                if (isReqs && rIt!=rEnd) {
                     rIt->second->handleParams(message);
                 }
                 break;
             case IN:
-                if (rIt!=_reqs.end()) {
+                if (isReqs && rIt!=rEnd) {
                     rIt->second->handleIN(message);
                 }
                 break;
             case DATA:
-                if (rIt!=_reqs.end()) {
+                if (isReqs && rIt!=rEnd) {
                     rIt->second->handleData(message);
                 }
                 break;
             case ABORT_REQUEST:
-                if (rIt!=_reqs.end()) {
+                if (isReqs && rIt!=rEnd) {
                     rIt->second->handleAbort(message);
-                    _reqs.erase(rIt);
+                    mIt->second.erase(rIt);
                 }
                 break;
             case GET_VALUES:
+                processGetValues(tr, message);
                 break;
             default:
                 break;
             }
         }
+
+        virtual void acceptError(const Exceptions::Socket& ex)
+        {
+            // TODO: socket::accept error
+            exit(-1);
+        }
+
+        void errorNotify(const Exceptions::Socket& ex)
+        {
+            typename RequestsType::iterator mIt=_reqs.find(ex._fd), mEnd=_reqs.end();
+            if (mIt!=mEnd) {
+                typename RequestsMap::iterator rIt=mIt->second.begin(), rEnd=mIt->second.end();
+                for (;rIt!=rEnd;++rIt) 
+                    rIt->second->handleError(ex);
+            }
+        }
+
+        virtual void readError(const Exceptions::Socket& ex)
+        {
+            errorNotify(ex);
+            close(ex._fd);
+        }
+
+        virtual void writeError(const Exceptions::Socket& ex)
+        {
+            errorNotify(ex);
+            close(ex._fd);
+        }
+
         void processGetValues(boost::shared_ptr<Transceiver> &tr,
                               boost::shared_ptr<Message> &message)
         {
@@ -166,8 +213,9 @@ namespace fcgi
                             buffer+=reply.str();
                         }
                     }
-                    else
-                        throw std::exception("Invalid GET_VALUE request");
+                    else {
+                        throw Exceptions::FcgiException("Invalid GET_VALUE request", 0);
+                    }
                     i+=nameLen;
                 }
                 boost::shared_ptr<Block> reply(Block::valuesReply(message->getId(), buffer));
@@ -176,25 +224,40 @@ namespace fcgi
             }
         }
 
-        virtual void requestComplete(uint32_t status, uint32_t fullId, bool keepConnection)
+        virtual void requestComplete(uint32_t status, uint32_t fd, uint16_t id, bool keepConnection)
         {
-            uint32_t fd=((fullId>>16)&0xffff);
-            _reqs.erase(fullId);
-            if (!keepConnection)
+            typename RequestsType::iterator mIt=_reqs.find(fd), mEnd=_reqs.end();
+            if (mIt!=mEnd) {
+                mIt->second.erase(id);
+            }
+            if (!keepConnection) {
                 close(fd);
+            }
+        }
+
+        void remove(uint32_t fd, uint16_t id)
+        {
+            typename RequestsType::iterator mIt=_reqs.find(fd), mEnd=_reqs.end();
+            typename RequestsMap::iterator  rIt,rEnd;
+            if (mIt!=mEnd)
+                rIt=(*mIt).second.erase(id);
         }
 
         void close(uint32_t fd) {
+            _reqs.erase(fd);
             ConnsType::iterator cIt=_conns.find(fd);
             if (cIt!=_conns.end()) {
                 // cIt->second->close();
                 _conns.erase(cIt);
             }
         }
-    
+
         void accept(uint32_t fd) {
-            boost::shared_ptr<Transceiver> conn(new Transceiver(*this,fd));
+            boost::shared_ptr<Transceiver> conn(new Transceiver(*this, fd));
             _conns.insert(std::make_pair(fd, conn));
+            _reqs.insert(std::make_pair(fd, RequestsMap()));
+
+            // std::cout<<"accept "<<fd<<" reqs.size()="<<_reqs.size()<<std::endl;
         }
 
         uint32_t     _maxConns;

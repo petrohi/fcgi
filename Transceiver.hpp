@@ -43,7 +43,7 @@ namespace fcgi
         void update(size_t aread) {
             _expect-=aread;
             if (_expect==0 && _isHeader) {
-                std::cout << "header "; _header.print(std::cout);
+                // std::cout << "header "; _header.print(std::cout);
                 _isHeader=false;
                 _expect=_header.recordLength();
                 _data.reset(new char[_expect]);
@@ -72,7 +72,7 @@ namespace fcgi
 
         uint32_t getFd() const { return _fd; }
 
-        void requestComplete(uint32_t status, uint32_t fullId, bool keepConnection);
+        void requestComplete(uint32_t status, uint16_t id, bool keepConnection);
 
         void close();
 
@@ -129,15 +129,14 @@ namespace fcgi
     public:
         Message(uint32_t fd, const Buffer& buffer) 
             : _fd(fd),
-              _requestId(buffer.getHeader().requestId()),
+              _id(buffer.getHeader().requestId()),
               _size(buffer.getHeader().contentLength()),
               _type(buffer.getHeader().type()),
               _data(buffer.getData())
         {}
 
         uint32_t getFd() const { return _fd; }
-        uint32_t getId() const { return constructFullId(_fd, _requestId); }
-        uint16_t requestId() const { return _requestId; }
+        uint16_t getId() const { return _id; }
         
         uint16_t type() const { return _type; }
         uint32_t size() const { return static_cast<uint32_t>(_size); }
@@ -149,7 +148,7 @@ namespace fcgi
 
     private:
         uint32_t   _fd;
-        uint16_t   _requestId;
+        uint16_t   _id;
         uint16_t   _size;
         RecordType _type;
         boost::shared_array<char> _data;

@@ -8,7 +8,7 @@
 
 namespace fcgi {
 
-    const std::streamsize FcgiSink::_size = 0xffda;
+    const std::streamsize FcgiSink::_size = 65480; // 0xffda;
     
     inline
     boost::shared_ptr<Block>& FcgiSink::blk()
@@ -19,15 +19,19 @@ namespace fcgi {
     std::streamsize FcgiSink::write(const char_type* src, std::streamsize n)
     {
         std::string test(src, n);
-        std::cout << "[" << n <<"] "<< std::endl;
 
         if (!blk().get())
             newBlock();
 
+        std::streamsize size = blk()->data().capacity()-1;
+
+        // std::cout << "[" << n <<"] size="<<blk()->data().size()
+        //          << " capacity=" << blk()->data().capacity()<< std::endl;
+
         std::streamsize dataToWrite=n;
 
         while (dataToWrite>0) {
-            size_t spaceToWrite=_size-blk()->data().size();
+            size_t spaceToWrite=size-blk()->data().size();
             if (dataToWrite<spaceToWrite) {
                 blk()->data().append(src,dataToWrite);
                 blk()->getRecordHeader()->contentLength(blk()->data().size()-sizeof(RecordHeader));
@@ -38,6 +42,8 @@ namespace fcgi {
                 dataToWrite-=spaceToWrite;
                 src+=spaceToWrite;
                 blk()->getRecordHeader()->contentLength(blk()->data().size()-sizeof(RecordHeader));
+                // std::cout << "[" << n <<"] size="<<blk()->data().size()
+                //          << " capacity=" << blk()->data().capacity()<< std::endl;
                 _rq._tr->writeBlock(blk());
                 newBlock();
             }
@@ -47,7 +53,7 @@ namespace fcgi {
 
     void FcgiSink::newBlock()
     {
-        blk().reset(Block::stream(_rq.getRequestId(), _out, _size));
+        blk().reset(Block::stream(_rq.getId(), _out, _size));
     }
 
 }

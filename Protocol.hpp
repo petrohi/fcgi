@@ -48,9 +48,6 @@ namespace fcgi
         FCGI_KEEP_CONN=1
     } RequestFlags;
 
-    inline
-    uint32_t constructFullId(uint32_t fd, uint16_t recId) { return ((0xffff & fd) << 16) | recId; }
-
     size_t getNVLength(const char* data, uint32_t& len);
 
     class RecordHeader : boost::noncopyable

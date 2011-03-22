@@ -30,8 +30,8 @@ namespace fcgi
 
             for (int i=0; i<65000; ++i) {
                 _base.outstream()<<"{test=\"test\", id=\""<<i<<"\"}\r\n";
-                _base.errstream()<<"debug cycle"<<i<<"\n";
-                // std::cout<<i<<std::endl;
+                // _base.errstream()<<"debug cycle"<<i<<"\n";
+            //    // std::cout<<i<<std::endl;
             }
 
             _base.errstream() << "Error test\r\n\r\n" << std::endl;
@@ -53,6 +53,9 @@ namespace fcgi
         void abort() {
             std::cout << "App::ABORT"<<std::endl;
             _base.requestComplete(0);
+        }
+
+        void handleError(const Exceptions::FcgiException& ex) {
         }
 
         RequestBase& _base;

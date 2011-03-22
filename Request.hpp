@@ -24,9 +24,8 @@ namespace fcgi
             _tr(tr), _id(0)
         {}
 
-        uint32_t getFd() const { return (_id >> 16) & 0x7fff; }
-        uint32_t getId() const { return _id; }
-        uint16_t getRequestId() const { return static_cast<uint16_t>(0xffff & _id); }
+        uint32_t getFd() const { return _fd; }
+        uint16_t getId() const { return _id; }
         uint8_t  getFlags() const { return _flags; }
         Role     getRole() const { return _role; }
         bool isKeepConnection() const { return (_flags & FCGI_KEEP_CONN)!=0; }
@@ -51,7 +50,8 @@ namespace fcgi
 
         boost::shared_ptr<Transceiver> _tr;
 
-        uint32_t     _id;
+        uint32_t     _fd;
+        uint16_t     _id;
         Role         _role;
         uint8_t      _flags;
     };
@@ -100,6 +100,10 @@ namespace fcgi
 
         void handleAbort(boost::shared_ptr<Message> &msg) {
             _appHandler.abort();
+        }
+
+        void handleError(const Exceptions::FcgiException& ex) {
+            _appHandler.handleError(ex);
         }
 
     private:
