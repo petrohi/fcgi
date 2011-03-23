@@ -3,6 +3,8 @@
 
 #include <map>
 
+#include "Http.hpp"
+
 namespace fcgi
 {
     class RequestBase;
@@ -16,8 +18,8 @@ namespace fcgi
 
         // size=0 means end of params
         void params(const std::string& name, const std::string& value) {
-            std::cout << "App::PARAMS "<<name<<" "<<value<<std::endl;
-            _params.insert(make_pair(name, value));
+            std::cout << name<<" "<<value<<std::endl;
+            _env.addParam(name, value);
         }
 
         void processParams() {
@@ -28,7 +30,7 @@ namespace fcgi
             _base.outstream() << "Status: 200\r\n"
                 "Content-Type: application/json; charset=utf-8\r\n\r\n";
 
-            for (int i=0; i<65000; ++i) {
+            for (int i=0; i<10; ++i) {
                 _base.outstream()<<"{test=\"test\", id=\""<<i<<"\"}\r\n";
                 // _base.errstream()<<"debug cycle"<<i<<"\n";
             //    // std::cout<<i<<std::endl;
@@ -60,8 +62,9 @@ namespace fcgi
 
         RequestBase& _base;
 
-        std::map<std::string, std::string> _params;
+        Http::Environment _env;
     };
+
 }
 
 #endif
