@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <iostream>
 #include "Http.hpp"
 
 using namespace std;
@@ -71,6 +72,35 @@ namespace Http
         _smMap.insert(make_pair("CONNECT", HTTP_METHOD_CONNECT));
     }
 
+    void Environment::addParam(const String& name, const String& value)
+    {
+        EnvParams idx=lookup(name);
+        if (idx==ePARAM_UNKNOWN) 
+            _uParams.insert(make_pair(name, value));            
+        else {
+            _kParams[idx]=value;
+            switch (idx) {
+            case ePARAM_REQUEST_METHOD:
+                setRequestMethod(value);
+                break;
+            case ePARAM_QUERY_STRING:
+                try {
+                    parseURI(value.begin(), value.end(), inserter(_getRequest, _getRequest.begin()));
+                }
+                catch (const std::exception& ex) {
+                }
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    void Environment::addPostData(const char* data, size_t size)
+    {
+        // _postBuffer.append(data, size);
+    }
+
 #if 0
     template<class In, class Out>
     Out base64Decode(In start, In end, Out destination)
@@ -140,27 +170,5 @@ namespace Http
     }
 #endif
 
-    template<typename InputT, typename OutputT>
-    void decodePercentEscaped(InputT src, InputT en, OutputT dst) {
-        while (src!=en) {
-            if (*src == '%') {
-                *dst=0;
-                ++src;
-                for(int shift=4; shift>=0 && src!=en; shift-=4) {
-                    // 0x41-'A', 0x46-'F'
-                    // 0x61-'a', 0x66-'f'
-                    if ((*src|0x20)>0x60 && (*src|0x20)<0x67)
-                        *dst|=((*src|0x20)-0x57)<<shift;
-                    else if (*src >= '0' && *src <= '9')
-                        *dst|=(*src&0x0f)<<shift;
-                    ++src;
-                }
-                ++dst;
-            }
-            else {
-                *src++=*dst++;
-            }
-        }
-    }
 }
 }

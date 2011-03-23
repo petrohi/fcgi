@@ -55,7 +55,21 @@ public:
     App(RequestBase& base) : BaseAppHandler(base) {}
 };
 
+namespace std {
+    std::ostream& operator<< (std::ostream& out, const std::pair<std::string, std::string> &p) {
+        return out << p.first << ":" << p.second;
+    }
+}
+
 int main(int argc, char** argv) {
+
+#if 0
+    std::string test(argv[1]);
+    std::map<string, string> m;
+    Http::parseURI(test.begin(), test.end(), inserter(m, m.begin()));
+    std::copy(m.begin(), m.end(), std::ostream_iterator< std::pair<std::string, std::string>, char>(cout,"\n") );
+    return 0;
+#endif
 
     if (argc!=3) {
         cout << "usage: async path_to_unix_socket" << endl;
@@ -122,5 +136,6 @@ int main(int argc, char** argv) {
     Manager< class App > fcgi;
 
     ev_loop(EV_DEFAULT, 0);
+
     return 0;
 }

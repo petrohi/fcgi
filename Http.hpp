@@ -66,22 +66,8 @@ namespace Http
         typedef std::map<String, String>   UnknownParamsType;
         typedef boost::array<String, ePARAM_NUM_MAX> KnownParamsType;
 
-        void addParam(const String& name, const String& value)
-        {
-            EnvParams idx=lookup(name);
-            if (idx==ePARAM_UNKNOWN) 
-                _uParams.insert(make_pair(name, value));            
-            else {
-                _kParams[idx]=value;
-                switch (idx) {
-                case ePARAM_REQUEST_METHOD:
-                    setRequestMethod(value);
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
+        void addParam(const String& name, const String& value);
+        void addPostData(const char* data, size_t size);
 
         String getParam(EnvParams idx) const
         {
@@ -118,6 +104,15 @@ namespace Http
             return getParam(ePARAM_PATH_INFO);
         }
 
+        bool requestVarGet(const String& key, String& value) const
+        {
+            std::map<String, String>::const_iterator it(_getRequest.find(key));
+            if (it==_getRequest.end())
+                return false;
+            value=it->second;
+            return true;
+        }
+
     private:
         void setRequestMethod(const String& value) {
             StaticMMapType::const_iterator it(_smMap.find(value));
@@ -126,7 +121,6 @@ namespace Http
             else
                 _requestMethod=HTTP_METHOD_ERROR;
         }
-
 #if 0
         typedef std::map<String, RequestMethod, boost::function< bool(std::string const &, 
                               std::string const &)> > StaticMMapType;
@@ -151,7 +145,56 @@ namespace Http
         KnownParamsType   _kParams; // known
         UnknownParamsType _uParams; // unknown
         RequestMethod     _requestMethod;
+
+        std::map<String, String> _getRequest;
     };
-}
-}
+
+    template<typename InputT, typename OutputT>
+    void decodeXwwwUrlEncoding(InputT src, InputT end, OutputT out)
+    {
+        while (src!=end) {
+            if (*src == '%') {
+                char dst(0);
+                ++src;
+                for(int shift=4; shift>=0 && src!=end; shift-=4) {
+                    // 0x41-'A', 0x46-'F'
+                    // 0x61-'a', 0x66-'f'
+                    if ((*src|0x20)>0x60 && (*src|0x20)<0x67)
+                        dst|=((*src|0x20)-0x57)<<shift;
+                    else if (*src >= '0' && *src <= '9')
+                        dst|=(*src&0x0f)<<shift;
+                    ++src;
+                }
+                *out++=dst;
+            }
+            else {
+                *out++=*src++;
+            }
+        }
+    }
+
+    template<typename InputT, typename OutputT>
+    void parseURI(InputT begin, InputT end, OutputT out)
+    {
+        InputT it(begin);
+        while (it!=end) {
+            InputT it1(find(it, end, '='));
+            if (it1==end)
+                break;
+            std::string name;
+            name.reserve(it1-it+1);
+
+            InputT it2(find(it1, end, '&'));
+            std::string value;
+            value.reserve(end-it2);
+
+            Http::decodeXwwwUrlEncoding(it, it1, back_inserter(name));
+            Http::decodeXwwwUrlEncoding(++it1, it2, back_inserter(value));
+            it=++it2;
+
+            out=make_pair(name, value);
+        }
+    }
+}} // fcgi::Http
+
 #endif

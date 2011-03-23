@@ -44,6 +44,7 @@ namespace fcgi
         void postData(const char* data, size_t size)
         {
             std::cout << "App::IN"<<std::endl;
+            _env.addPostData(data, size);
         }
 
         void data(const char* data, size_t size)
