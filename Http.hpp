@@ -6,8 +6,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/compare.hpp>
 
-
-
 namespace fcgi 
 {
 namespace Http
@@ -67,6 +65,8 @@ namespace Http
         typedef boost::array<String, ePARAM_NUM_MAX> KnownParamsType;
 
         void addParam(const String& name, const String& value);
+        void processParams();
+
         void addPostData(const char* data, size_t size);
 
         String getParam(EnvParams idx) const
@@ -113,6 +113,15 @@ namespace Http
             return true;
         }
 
+        bool requestVarPost(const String& key, String& value) const
+        {
+            std::map<String, String>::const_iterator it(_postRequest.find(key));
+            if (it==_postRequest.end())
+                return false;
+            value=it->second;
+            return true;
+        }
+
     private:
         void setRequestMethod(const String& value) {
             StaticMMapType::const_iterator it(_smMap.find(value));
@@ -145,8 +154,10 @@ namespace Http
         KnownParamsType   _kParams; // known
         UnknownParamsType _uParams; // unknown
         RequestMethod     _requestMethod;
+        String            _postBuffer;
 
-        std::map<String, String> _getRequest;
+        std::map<String, String>  _getRequest;
+        std::map<String, String> _postRequest;
     };
 
     template<typename InputT, typename OutputT>

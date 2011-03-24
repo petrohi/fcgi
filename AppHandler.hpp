@@ -8,6 +8,8 @@
 namespace fcgi
 {
     class RequestBase;
+    
+    // just one of a possible application handler implementations.
     class BaseAppHandler
     {
     public:
@@ -16,16 +18,18 @@ namespace fcgi
         void init() {
         }
 
-        // size=0 means end of params
+        // called for every FCGI HEADER pair, store it in the environment object
         void params(const std::string& name, const std::string& value) {
-            std::cout << name<<" "<<value<<std::endl;
             _env.addParam(name, value);
         }
 
+        // called after the last FCGI HEADER pair
         void processParams() {
+            _env.processParams();
         }
 
-        void processRequest() {
+        void processRequest()
+        {
             std::cout << "App::Process"<<std::endl;
             _base.outstream() << "Status: 200\r\n"
                 "Content-Type: application/json; charset=utf-8\r\n\r\n";
@@ -40,16 +44,18 @@ namespace fcgi
             _base.requestComplete(0);
         }
 
-        // size=0 means end of post data, execute request
+        // size=0 means end of post data, ready to execute an request
         void postData(const char* data, size_t size)
         {
-            std::cout << "App::IN"<<std::endl;
-            _env.addPostData(data, size);
+            if (_env.requestMethod()==Http::HTTP_METHOD_POST &&
+                (_env.getParam(Http::ePARAM_CONTENT_TYPE) ==
+                 "application/x-www-form-urlencoded")) {
+                _env.addPostData(data, size);
+            }
         }
 
         void data(const char* data, size_t size)
         {
-            std::cout << "App::DATA"<<std::endl;
         }
 
         // WebServer requests to abort a request

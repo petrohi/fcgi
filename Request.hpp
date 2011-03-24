@@ -15,7 +15,7 @@
 namespace fcgi
 {
     class Transceiver;
-    class RequestBase
+    class RequestBase : boost::noncopyable
     {
     public:
         RequestBase(boost::shared_ptr<Transceiver> &tr) :
@@ -57,7 +57,7 @@ namespace fcgi
     };
 
     template<typename AppHandlerT>
-    class RequestHandler : boost::noncopyable, public RequestBase
+    class RequestHandler : public RequestBase
     {
         typedef RequestHandler<AppHandlerT> ThisType;
     public:

@@ -79,26 +79,34 @@ namespace Http
             _uParams.insert(make_pair(name, value));            
         else {
             _kParams[idx]=value;
-            switch (idx) {
-            case ePARAM_REQUEST_METHOD:
-                setRequestMethod(value);
-                break;
-            case ePARAM_QUERY_STRING:
-                try {
-                    parseURI(value.begin(), value.end(), inserter(_getRequest, _getRequest.begin()));
-                }
-                catch (const std::exception& ex) {
-                }
-                break;
-            default:
-                break;
-            }
         }
+    }
+
+    void Environment::processParams()
+    {
+        setRequestMethod(getParam(ePARAM_REQUEST_METHOD));
+        parseURI(getParam(ePARAM_QUERY_STRING).begin(),
+                 getParam(ePARAM_QUERY_STRING).end(),
+                 inserter(_getRequest, _getRequest.begin()));
     }
 
     void Environment::addPostData(const char* data, size_t size)
     {
-        // _postBuffer.append(data, size);
+        _postBuffer.append(data, size);
+        if (size>0) {
+            String::const_reverse_iterator rit(find(_postBuffer.rbegin(), _postBuffer.rend(), '&'));
+            if (rit!=_postBuffer.rend()) {
+                String::const_iterator begin(_postBuffer.begin());
+                String::const_iterator end(rit.base());
+                parseURI(begin, end, inserter(_postRequest, _postRequest.begin()));
+                _postBuffer.erase(0, end-begin);
+            }
+        }
+        else {
+            parseURI(_postBuffer.begin(), _postBuffer.end(),
+                     inserter(_postRequest, _postRequest.begin()));
+            _postBuffer.resize(0);
+        }
     }
 
 #if 0
