@@ -15,8 +15,8 @@ namespace fcgi
     public:
         BaseAppHandler(RequestBase& base) : _base(base) {}
 
-        void init() {
-        }
+        // void init() {
+        // }
 
         // called for every FCGI HEADER pair, store it in the environment object
         void params(const std::string& name, const std::string& value) {
@@ -56,6 +56,7 @@ namespace fcgi
 
         void data(const char* data, size_t size)
         {
+            // ignore FCGI_DATA stream
         }
 
         // WebServer requests to abort a request

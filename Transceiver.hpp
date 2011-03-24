@@ -67,7 +67,7 @@ namespace fcgi
     {
         typedef Transceiver ThisType;
     public:
-        Transceiver(ManagerHandle& manager, int fd);
+        Transceiver(ManagerHandle& manager, int fd, struct ev_loop* loop=EV_DEFAULT);
         ~Transceiver();
 
         uint32_t getFd() const { return _fd; }
@@ -76,7 +76,7 @@ namespace fcgi
 
         void close();
 
-        //        void writeStream(uint16_t id, std::string& str, bool isOut=true);
+        // void writeStream(uint16_t id, std::string& str, bool isOut=true);
         void writeBlock(boost::shared_ptr<Block> &blk);
 
     private:
@@ -112,7 +112,7 @@ namespace fcgi
 
         ManagerHandle&  _manager;
         int             _fd;
-        struct ev_loop* _loop;
+        // struct ev_loop* _loop;
 
         ev::io          _rev;
         ev::io          _wev;

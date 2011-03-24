@@ -5,10 +5,12 @@
 
 namespace fcgi {
 
-    Transceiver::Transceiver(ManagerHandle& manager, int fd) :
+    Transceiver::Transceiver(ManagerHandle& manager, int fd, struct ev_loop* loop) :
         _manager(manager),
         _fd(fd),
-        _loop(EV_DEFAULT)
+        // _loop(loop),
+        _rev(loop),
+        _wev(loop)
     {
         nonblock(_fd);
         _rev.set < ThisType, &ThisType::evRead  > (this);

@@ -15,8 +15,8 @@ namespace fcgi
     {
         typedef Acceptor<ManagerT> ThisType;
     public:
-        Acceptor(ManagerT& manager, uint32_t fd)
-            : _manager(manager), _fd(fd)
+        Acceptor(ManagerT& manager, uint32_t fd, struct ev_loop* loop=EV_DEFAULT)
+            : _manager(manager), _fd(fd), _rev(loop)
         {
             _rev.set < ThisType, &ThisType::evRead  > (this);
             _rev.start(_fd, ev::READ);
@@ -84,14 +84,11 @@ namespace fcgi
                                                boost::shared_ptr<HandlerType> > RequestsMap;
         typedef typename std::map< uint32_t, RequestsMap > RequestsType;
         
-        Manager(uint32_t fd=0) :
-            _maxConns(100), _maxReqs(100), _mpxsConns(10),
-            _acceptor(*this, fd)
+        Manager(uint32_t fd=0, struct ev_loop* loop=EV_DEFAULT) :
+            _maxConns(100), _maxReqs(100), _mpxsConns(10), _loop(loop),
+            _acceptor(*this, fd, loop)
         {}
 
-        void removeAll(uint32_t fd) {
-        }
-        
         virtual void handle(boost::shared_ptr<Transceiver> &tr,
                             boost::shared_ptr<Message> &message)
         {
@@ -253,16 +250,17 @@ namespace fcgi
         }
 
         void accept(uint32_t fd) {
-            boost::shared_ptr<Transceiver> conn(new Transceiver(*this, fd));
+            boost::shared_ptr<Transceiver> conn(new Transceiver(*this, fd, _loop));
             _conns.insert(std::make_pair(fd, conn));
             _reqs.insert(std::make_pair(fd, RequestsMap()));
-
             // std::cout<<"accept "<<fd<<" reqs.size()="<<_reqs.size()<<std::endl;
         }
 
         uint32_t     _maxConns;
         uint32_t     _maxReqs;
         uint32_t     _mpxsConns;
+
+        struct ev_loop* _loop;
         
         AcceptorType _acceptor;
 

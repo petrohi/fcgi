@@ -58,7 +58,10 @@ namespace Http
     class Environment
     {
     public:
-        Environment() : _requestMethod(HTTP_METHOD_ERROR) { init(); }
+        Environment() :
+            _requestMethod(HTTP_METHOD_ERROR),
+            _contentLength(0)
+        { init(); }
 
         typedef std::basic_string<char>    String;
         typedef std::map<String, String>   UnknownParamsType;
@@ -102,6 +105,11 @@ namespace Http
 
         String pathInfo() const {
             return getParam(ePARAM_PATH_INFO);
+        }
+
+        uint64_t contentLength() const
+        {
+            return _contentLength;
         }
 
         bool requestVarGet(const String& key, String& value) const
@@ -155,6 +163,7 @@ namespace Http
         UnknownParamsType _uParams; // unknown
         RequestMethod     _requestMethod;
         String            _postBuffer;
+        uint64_t          _contentLength;
 
         std::map<String, String>  _getRequest;
         std::map<String, String> _postRequest;

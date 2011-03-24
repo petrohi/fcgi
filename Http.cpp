@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <iostream>
+#include <sstream>
 #include "Http.hpp"
 
 using namespace std;
@@ -88,6 +89,7 @@ namespace Http
         parseURI(getParam(ePARAM_QUERY_STRING).begin(),
                  getParam(ePARAM_QUERY_STRING).end(),
                  inserter(_getRequest, _getRequest.begin()));
+        std::istringstream(getParam(ePARAM_CONTENT_LENGTH)) >> _contentLength;
     }
 
     void Environment::addPostData(const char* data, size_t size)
