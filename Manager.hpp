@@ -8,6 +8,8 @@
 #include "Transceiver.hpp"
 #include "Request.hpp"
 
+#define FCGI_DEBUG
+
 namespace fcgi
 {
     template<typename ManagerT>
@@ -96,25 +98,29 @@ namespace fcgi
             uint32_t fd = message->getFd();
             uint16_t id = message->getId();
 
-            typename RequestsType::iterator mIt=_reqs.find(fd), mEnd=_reqs.end();
+            typename RequestsType::iterator cIt=_reqs.find(fd), cEnd=_reqs.end();
             typename RequestsMap::iterator  rIt,rEnd;
             bool isReqs=false;
 
-            if (mIt!=mEnd) {
-                rIt=(*mIt).second.find(id);
-                rEnd=(*mIt).second.end();
+            // cIt - connection (fd) iterator
+            // rIt - request (req id) iterator
+            if (cIt!=cEnd) {
+                rIt=(*cIt).second.find(id);
+                rEnd=(*cIt).second.end();
                 isReqs=true;
             }
-
-            //std::cout<<"FD="<<fd<<" Message type="<<type<<" id="<< id
-            //         <<((isReqs && rIt!=rEnd)  ? " FOUND" : " NOT FOUND")<<std::endl;
-
+#ifdef FCGI_DEBUG
+            std::cout<<"FCGI ["<<fd<<"] handle message type="<<type<<", id="<< id
+                     <<((isReqs && rIt!=rEnd)  ? " FOUND" : " NOT FOUND")<<std::endl;
+#endif
             switch (type) {
             case BEGIN_REQUEST :
-                if (isReqs && rIt==mIt->second.end()) {
+                if (isReqs && rIt==rEnd) {
                     boost::shared_ptr<HandlerType> rq(new HandlerType(tr,message));
-                    mIt->second.insert(make_pair(id, rq));
+                    cIt->second.insert(make_pair(id, rq));
                 }
+                else 
+                    throw Exceptions::FcgiException("BEGIN_REQUEST on the same connection with id already exists.",0);
                 break;
             case PARAMS:
                 if (isReqs && rIt!=rEnd) {
@@ -134,7 +140,7 @@ namespace fcgi
             case ABORT_REQUEST:
                 if (isReqs && rIt!=rEnd) {
                     rIt->second->handleAbort(message);
-                    mIt->second.erase(rIt);
+                    cIt->second.erase(rIt);
                 }
                 break;
             case GET_VALUES:
@@ -253,7 +259,9 @@ namespace fcgi
             boost::shared_ptr<Transceiver> conn(new Transceiver(*this, fd, _loop));
             _conns.insert(std::make_pair(fd, conn));
             _reqs.insert(std::make_pair(fd, RequestsMap()));
-            // std::cout<<"accept "<<fd<<" reqs.size()="<<_reqs.size()<<std::endl;
+#ifdef FCGI_DEBUG
+            std::cout<<"FCGI ["<<fd<<"] accept, total connections:"<<_conns.size()<<std::endl;
+#endif
         }
 
         uint32_t     _maxConns;

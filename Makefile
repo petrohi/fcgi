@@ -1,10 +1,21 @@
-OBJS = Exceptions.o Transceiver.o Request.o FcgiSink.o Http.o main.o
+EXAMPLE = async
+FCGILIB = libfcgi.a
+OBJS =  main.o
+LIBOBJS = Exceptions.o Transceiver.o Request.o FcgiSink.o Http.o 
 
-async: $(OBJS)
-	$(CXX) -o async $(OBJS) -lhiredis /usr/local/lib/libev.a 
+all: $(EXAMPLE) $(FCGILIB)
+
+$(EXAMPLE): $(OBJS) $(FCGILIB)
+	$(CXX) -o async $(OBJS) $(FCGILIB) -lhiredis -lboost_wserialization /usr/local/lib/libev.a
+
+$(FCGILIB): $(LIBOBJS)
+	$(AR) cr $(FCGILIB) $(LIBOBJS)
 
 %.o: %.cpp
 	$(CXX) -g -c $< 
+
+clean:
+	rm -f *.o
 
 Request.o: Request.cpp Request.hpp Transceiver.hpp Protocol.hpp \
  Exceptions.hpp Block.hpp FcgiSink.hpp

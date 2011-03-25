@@ -81,9 +81,10 @@ int main(int argc, char** argv) {
                 return 0;
             }
             struct sockaddr_un addr;
+            int size=strlen(argv[2]);
             memset(&addr, 0, sizeof(struct sockaddr_un));
             addr.sun_family = AF_UNIX;
-            strncpy(addr.sun_path, argv[1], sizeof(addr.sun_path)-1);
+            strncpy(addr.sun_path, argv[2], size+1);//, sizeof(struct sockaddr_un)));
             if (bind(fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_un))==-1) {
                 perror("bind");
                 exit(-1);
@@ -119,11 +120,8 @@ int main(int argc, char** argv) {
     ev_default_loop(0);
     string host("127.0.0.1");
     int port=6379;
-
     Main m(host, port);
-
     Manager< class App > fcgi;
-
     ev_loop(EV_DEFAULT, 0);
 
     return 0;

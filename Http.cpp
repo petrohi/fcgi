@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <iostream>
 #include <sstream>
+#include <boost/archive/detail/utf8_codecvt_facet.hpp>
 #include "Http.hpp"
 
 using namespace std;
@@ -29,38 +30,38 @@ namespace Http
             return; 
 
         // inserts are presorted for rb-tree, names (enum) are presorted too.
-        _spMap.insert(make_pair("GATEWAY_INTERFACE", ePARAM_GATEWAY_INTERFACE)); //13
+        _spMap.insert(make_pair("GATEWAY_INTERFACE", PARAM_GATEWAY_INTERFACE)); //13
 
-        _spMap.insert(make_pair("HTTP_COOKIE",     ePARAM_HTTP_COOKIE));         //6
-        _spMap.insert(make_pair("REQUEST_URI",     ePARAM_REQUEST_URI));         //20
+        _spMap.insert(make_pair("HTTP_COOKIE",     PARAM_HTTP_COOKIE));         //6
+        _spMap.insert(make_pair("REQUEST_URI",     PARAM_REQUEST_URI));         //20
 
-        _spMap.insert(make_pair("DOCUMENT_ROOT",   ePARAM_DOCUMENT_ROOT));       //2
-        _spMap.insert(make_pair("HTTP_REFERER",    ePARAM_HTTP_REFERER));        //10
-        _spMap.insert(make_pair("REDIRECT_STATUS", ePARAM_REDIRECT_STATUS));     //16
-        _spMap.insert(make_pair("SERVER_NAME",     ePARAM_SERVER_NAME));         //24
+        _spMap.insert(make_pair("DOCUMENT_ROOT",   PARAM_DOCUMENT_ROOT));       //2
+        _spMap.insert(make_pair("HTTP_REFERER",    PARAM_HTTP_REFERER));        //10
+        _spMap.insert(make_pair("REDIRECT_STATUS", PARAM_REDIRECT_STATUS));     //16
+        _spMap.insert(make_pair("SERVER_NAME",     PARAM_SERVER_NAME));         //24
 
-        _spMap.insert(make_pair("CONTENT_LENGTH",  ePARAM_CONTENT_LENGTH));          //1
-        _spMap.insert(make_pair("HTTP_ACCEPT_CHARSET", ePARAM_HTTP_ACCEPT_CHARSET)); //4
-        _spMap.insert(make_pair("HTTP_IF_NONE_MATCH", ePARAM_HTTP_IF_NONE_MATCH));   //8
-        _spMap.insert(make_pair("HTTP_USER_AGENT", ePARAM_HTTP_USER_AGENT));         //12
-        _spMap.insert(make_pair("QUERY_STRING",    ePARAM_QUERY_STRING));            //15
-        _spMap.insert(make_pair("REMOTE_ADDR",     ePARAM_REMOTE_ADDR));             //18
-        _spMap.insert(make_pair("SCRIPT_NAME",     ePARAM_SCRIPT_NAME));             //22
-        _spMap.insert(make_pair("SERVER_PROTOCOL", ePARAM_SERVER_PROTOCOL));         //26
+        _spMap.insert(make_pair("CONTENT_LENGTH",  PARAM_CONTENT_LENGTH));          //1
+        _spMap.insert(make_pair("HTTP_ACCEPT_CHARSET", PARAM_HTTP_ACCEPT_CHARSET)); //4
+        _spMap.insert(make_pair("HTTP_IF_NONE_MATCH", PARAM_HTTP_IF_NONE_MATCH));   //8
+        _spMap.insert(make_pair("HTTP_USER_AGENT", PARAM_HTTP_USER_AGENT));         //12
+        _spMap.insert(make_pair("QUERY_STRING",    PARAM_QUERY_STRING));            //15
+        _spMap.insert(make_pair("REMOTE_ADDR",     PARAM_REMOTE_ADDR));             //18
+        _spMap.insert(make_pair("SCRIPT_NAME",     PARAM_SCRIPT_NAME));             //22
+        _spMap.insert(make_pair("SERVER_PROTOCOL", PARAM_SERVER_PROTOCOL));         //26
 
-        _spMap.insert(make_pair("CONTENT_TYPE",    ePARAM_CONTENT_TYPE));                 //0
-        _spMap.insert(make_pair("HTTP_ACCEPT",     ePARAM_HTTP_ACCEPT));                  //3
-        _spMap.insert(make_pair("HTTP_ACCEPT_LANGUAGE", ePARAM_HTTP_ACCEPT_LANGUAGE));    //5
-        _spMap.insert(make_pair("HTTP_IF_MODIFIED_SINCE", ePARAM_HTTP_IF_MODIFIED_SINCE));//7
-        _spMap.insert(make_pair("HTTP_KEEP_ALIVE", ePARAM_HTTP_KEEP_ALIVE));              //9
-        _spMap.insert(make_pair("HTTP_HOST",       ePARAM_HTTP_HOST));                    //11
-        _spMap.insert(make_pair("PATH_INFO",       ePARAM_PATH_INFO));                    //14
-        _spMap.insert(make_pair("REMOTE_PORT",     ePARAM_REMOTE_PORT));                  //17
-        _spMap.insert(make_pair("REQUEST_METHOD",  ePARAM_REQUEST_METHOD));               //19
-        _spMap.insert(make_pair("SCRIPT_FILENAME", ePARAM_SCRIPT_FILENAME));              //21
-        _spMap.insert(make_pair("SERVER_ADDR",     ePARAM_SERVER_ADDR));                  //23
-        _spMap.insert(make_pair("SERVER_PORT",     ePARAM_SERVER_PORT));                  //25
-        _spMap.insert(make_pair("SERVER_SOFTWARE", ePARAM_SERVER_SOFTWARE));              //27
+        _spMap.insert(make_pair("CONTENT_TYPE",    PARAM_CONTENT_TYPE));                 //0
+        _spMap.insert(make_pair("HTTP_ACCEPT",     PARAM_HTTP_ACCEPT));                  //3
+        _spMap.insert(make_pair("HTTP_ACCEPT_LANGUAGE", PARAM_HTTP_ACCEPT_LANGUAGE));    //5
+        _spMap.insert(make_pair("HTTP_IF_MODIFIED_SINCE", PARAM_HTTP_IF_MODIFIED_SINCE));//7
+        _spMap.insert(make_pair("HTTP_KEEP_ALIVE", PARAM_HTTP_KEEP_ALIVE));              //9
+        _spMap.insert(make_pair("HTTP_HOST",       PARAM_HTTP_HOST));                    //11
+        _spMap.insert(make_pair("PATH_INFO",       PARAM_PATH_INFO));                    //14
+        _spMap.insert(make_pair("REMOTE_PORT",     PARAM_REMOTE_PORT));                  //17
+        _spMap.insert(make_pair("REQUEST_METHOD",  PARAM_REQUEST_METHOD));               //19
+        _spMap.insert(make_pair("SCRIPT_FILENAME", PARAM_SCRIPT_FILENAME));              //21
+        _spMap.insert(make_pair("SERVER_ADDR",     PARAM_SERVER_ADDR));                  //23
+        _spMap.insert(make_pair("SERVER_PORT",     PARAM_SERVER_PORT));                  //25
+        _spMap.insert(make_pair("SERVER_SOFTWARE", PARAM_SERVER_SOFTWARE));              //27
 
         // _smMap.insert(make_pair("ERROR", HTTP_METHOD_ERROR));
         _smMap.insert(make_pair("HEAD",    HTTP_METHOD_HEAD));
@@ -76,7 +77,7 @@ namespace Http
     void Environment::addParam(const String& name, const String& value)
     {
         EnvParams idx=lookup(name);
-        if (idx==ePARAM_UNKNOWN) 
+        if (idx==PARAM_UNKNOWN) 
             _uParams.insert(make_pair(name, value));            
         else {
             _kParams[idx]=value;
@@ -85,11 +86,11 @@ namespace Http
 
     void Environment::processParams()
     {
-        setRequestMethod(getParam(ePARAM_REQUEST_METHOD));
-        parseURI(getParam(ePARAM_QUERY_STRING).begin(),
-                 getParam(ePARAM_QUERY_STRING).end(),
+        setRequestMethod(getParam(PARAM_REQUEST_METHOD));
+        parseURI(getParam(PARAM_QUERY_STRING).begin(),
+                 getParam(PARAM_QUERY_STRING).end(),
                  inserter(_getRequest, _getRequest.begin()));
-        std::istringstream(getParam(ePARAM_CONTENT_LENGTH)) >> _contentLength;
+        std::istringstream(getParam(PARAM_CONTENT_LENGTH)) >> _contentLength;
     }
 
     void Environment::addPostData(const char* data, size_t size)
@@ -110,6 +111,162 @@ namespace Http
             _postBuffer.resize(0);
         }
     }
+
+    template<>
+    void HttpString<wchar_t>::decode(const char* data, size_t size, std::basic_string<wchar_t>& string)
+    {
+        const size_t bufferSize = 512;
+        wchar_t buffer[bufferSize];
+
+        if (size)
+        {
+            std::codecvt_base::result result = std::codecvt_base::partial;
+
+            while (result == std::codecvt_base::partial)
+            {
+                wchar_t* bufferIt;
+                const char* dataIt;
+
+                std::mbstate_t conversionState = std::mbstate_t();
+                result = std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t> >(std::locale(std::locale::classic(),
+                        new boost::archive::detail::utf8_codecvt_facet)).in(conversionState, data, data + size, dataIt, buffer, buffer + bufferSize, bufferIt);
+
+                string.append(buffer, bufferIt);
+                size -= (dataIt - data);
+                data = dataIt;
+            }
+
+            if (result == std::codecvt_base::error)
+            {
+            }
+        }
+    }
+
+    template<> template<>
+    void HttpString<wchar_t>::encode(const std::basic_string<wchar_t>& string, std::ostream& data)
+    {
+        const size_t bufferSize = 512;
+        char buffer[bufferSize];
+        size_t size = string.size();
+
+        std::ostream_iterator<char> out(data);
+
+        if (size)
+        {
+            std::codecvt_base::result result = std::codecvt_base::partial;
+            char* bufferIt;
+            const wchar_t* stringBegin = string.c_str();
+            const wchar_t* stringIt;
+
+            while (result == std::codecvt_base::partial)
+            {
+                std::mbstate_t conversionState = std::mbstate_t();
+                result =
+                    std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t> >
+                    (std::locale(std::locale::classic(),
+                                 new boost::archive::detail::utf8_codecvt_facet))
+                    .out(conversionState, stringBegin, stringBegin + size, stringIt,
+                         buffer, buffer + bufferSize, bufferIt);
+
+                std::copy(buffer, bufferIt, out);
+                size -= (stringIt - stringBegin);
+                stringBegin = stringIt;
+            }
+
+            if (result == std::codecvt_base::error)
+            {
+            }
+        }
+    }
+
+    template<> template<>
+    void HttpString<wchar_t>::encode(const std::basic_string<wchar_t>& string, std::string& data)
+    {
+        std::ostringstream out;
+        encode(string, static_cast< std::ostream& > (out) );
+        data=out.str();
+    }
+
+    template<>
+    bool Environment::requestVarGet(const String& key, String& value) const
+    {
+        std::map<String, String>::const_iterator it(_getRequest.find(key));
+        if (it==_getRequest.end())
+            return false;
+        value=it->second;
+        return true;
+    }
+
+    template<>
+    bool Environment::requestVarGet(const char* keyp, String& value) const
+    {
+        const String key(keyp);
+        return requestVarGet<const String&, String> (key, value);
+    }
+
+    template<>
+    bool Environment::requestVarGet(const String& key, std::basic_string<wchar_t>& wvalue) const
+    {
+        std::map<String, String>::const_iterator it(_getRequest.find(key));
+        if (it==_getRequest.end())
+            return false;
+        HttpString<wchar_t>::decode(it->second, wvalue);
+        return true;
+    }
+
+    template<>
+    bool Environment::requestVarGet(const char* keyp, std::basic_string<wchar_t>& wvalue) const
+    {
+        const String key(keyp);
+        return requestVarGet<const String&,std::basic_string<wchar_t> > (key, wvalue);
+    }
+
+    template<>
+    bool Environment::requestVarGet(const std::basic_string<wchar_t>& wkey,
+                                    std::basic_string<wchar_t>& wvalue) const
+    {
+        std::string key;
+        HttpString<wchar_t>::encode(wkey, key);
+        return requestVarGet<const String&,std::basic_string<wchar_t> > (key, wvalue);
+    }
+
+    template<>
+    bool Environment::requestVarGet(const wchar_t* wkeyp,
+                                    std::basic_string<wchar_t>& wvalue) const
+    {
+        const std::wstring wkey(wkeyp);
+        return requestVarGet<const std::wstring&, std::wstring>(wkey, wvalue);
+    }
+
+    template<>
+    bool Environment::requestVarGet(const String &key,
+                                    unsigned int& ivalue) const
+    {
+        std::map<String, String>::const_iterator it(_getRequest.find(key));
+        if (it==_getRequest.end())
+            return false;
+        istringstream istr(it->second);
+        istr >> ivalue;
+        return true;
+    }
+
+    template<>
+    bool Environment::requestVarGet(const std::basic_string<wchar_t>& wkey,
+                                    unsigned int& ivalue) const
+    {
+        std::string key;
+        HttpString<wchar_t>::encode(wkey, key);
+        return requestVarGet<const std::string&, unsigned int>(key, ivalue);
+    }
+
+    template<>
+    bool Environment::requestVarGet(const wchar_t* wkeyp,
+                                    unsigned int& ivalue) const
+    {
+        std::wstring wkey(wkeyp);
+        return requestVarGet<const std::wstring&, unsigned int>(wkey, ivalue);
+    }
+
 
 #if 0
     template<class In, class Out>

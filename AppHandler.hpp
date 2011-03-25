@@ -33,13 +33,16 @@ namespace fcgi
             std::cout << "App::Process"<<std::endl;
             _base.outstream() << "Status: 200\r\n"
                 "Content-Type: application/json; charset=utf-8\r\n\r\n";
-
-            for (int i=0; i<10; ++i) {
-                _base.outstream()<<"{test=\"test\", id=\""<<i<<"\"}\r\n";
-                // _base.errstream()<<"debug cycle"<<i<<"\n";
-            //    // std::cout<<i<<std::endl;
+            for (int i=0; i<Http::PARAM_NUM_MAX; ++i) {
+                _base.outstream()<<"PARAM "
+                                 <<i<<" "
+                                 <<_env.getParam((Http::EnvParams)i)<<"\r\n";
             }
 
+            //_base.outstream()<<"{test=\"test\", id=\""<<i<<"\"}\r\n";
+            // _base.errstream()<<"debug cycle"<<i<<"\n";
+            //    // std::cout<<i<<std::endl;
+            
             _base.errstream() << "Error test\r\n\r\n" << std::endl;
             _base.requestComplete(0);
         }
@@ -48,8 +51,7 @@ namespace fcgi
         void postData(const char* data, size_t size)
         {
             if (_env.requestMethod()==Http::HTTP_METHOD_POST &&
-                (_env.getParam(Http::ePARAM_CONTENT_TYPE) ==
-                 "application/x-www-form-urlencoded")) {
+                (_env.contentType()=="application/x-www-form-urlencoded")) {
                 _env.addPostData(data, size);
             }
         }

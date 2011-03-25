@@ -23,37 +23,50 @@ namespace Http
     } RequestMethod;
 
     typedef enum _EnvParams {
-        ePARAM_CONTENT_LENGTH=0,
-        ePARAM_CONTENT_TYPE,
-        ePARAM_DOCUMENT_ROOT,
-        ePARAM_HTTP_ACCEPT,
-        ePARAM_HTTP_ACCEPT_CHARSET,
-        ePARAM_HTTP_ACCEPT_LANGUAGE,
-        ePARAM_HTTP_COOKIE,
-        ePARAM_HTTP_HOST,
-        ePARAM_HTTP_IF_MODIFIED_SINCE,
-        ePARAM_HTTP_IF_NONE_MATCH,
-        ePARAM_HTTP_KEEP_ALIVE,
-        ePARAM_HTTP_REFERER,
-        ePARAM_HTTP_USER_AGENT,
-        ePARAM_GATEWAY_INTERFACE,
-        ePARAM_PATH_INFO,
-        ePARAM_QUERY_STRING,
-        ePARAM_REDIRECT_STATUS,
-        ePARAM_REMOTE_ADDR,
-        ePARAM_REMOTE_PORT,
-        ePARAM_REQUEST_METHOD,
-        ePARAM_REQUEST_URI,
-        ePARAM_SCRIPT_FILENAME,
-        ePARAM_SCRIPT_NAME,
-        ePARAM_SERVER_ADDR,
-        ePARAM_SERVER_NAME,
-        ePARAM_SERVER_PORT,
-        ePARAM_SERVER_PROTOCOL,
-        ePARAM_SERVER_SOFTWARE,
-        ePARAM_NUM_MAX,
-        ePARAM_UNKNOWN
+        PARAM_CONTENT_LENGTH=0,
+        PARAM_CONTENT_TYPE,
+        PARAM_DOCUMENT_ROOT,
+        PARAM_HTTP_ACCEPT,
+        PARAM_HTTP_ACCEPT_CHARSET,
+        PARAM_HTTP_ACCEPT_LANGUAGE,
+        PARAM_HTTP_COOKIE,
+        PARAM_HTTP_HOST,
+        PARAM_HTTP_IF_MODIFIED_SINCE,
+        PARAM_HTTP_IF_NONE_MATCH,
+        PARAM_HTTP_KEEP_ALIVE,
+        PARAM_HTTP_REFERER,
+        PARAM_HTTP_USER_AGENT,
+        PARAM_GATEWAY_INTERFACE,
+        PARAM_PATH_INFO,
+        PARAM_QUERY_STRING,
+        PARAM_REDIRECT_STATUS,
+        PARAM_REMOTE_ADDR,
+        PARAM_REMOTE_PORT,
+        PARAM_REQUEST_METHOD,
+        PARAM_REQUEST_URI,
+        PARAM_SCRIPT_FILENAME,
+        PARAM_SCRIPT_NAME,
+        PARAM_SERVER_ADDR,
+        PARAM_SERVER_NAME,
+        PARAM_SERVER_PORT,
+        PARAM_SERVER_PROTOCOL,
+        PARAM_SERVER_SOFTWARE,
+        PARAM_NUM_MAX,
+        PARAM_UNKNOWN
     } EnvParams;
+
+    template<typename CharT>
+    struct HttpString
+    {
+        static void decode(const char* data, size_t size, std::basic_string<CharT>& string);
+        static void decode(const std::string& data,       std::basic_string<CharT>& string)
+        {
+            decode(data.c_str(), data.size(), string);
+        }
+
+        template<typename OutputT>
+        static void encode(const std::basic_string<CharT>& string, OutputT & data);
+    };
 
     class Environment
     {
@@ -65,7 +78,7 @@ namespace Http
 
         typedef std::basic_string<char>    String;
         typedef std::map<String, String>   UnknownParamsType;
-        typedef boost::array<String, ePARAM_NUM_MAX> KnownParamsType;
+        typedef boost::array<String, PARAM_NUM_MAX> KnownParamsType;
 
         void addParam(const String& name, const String& value);
         void processParams();
@@ -77,10 +90,17 @@ namespace Http
             return _kParams[idx];
         }
 
+        std::basic_string<wchar_t> wgetParam(EnvParams idx) const
+        {
+            std::basic_string<wchar_t> result;
+            HttpString<wchar_t>::decode(_kParams[idx], result);
+            return result;
+        }
+
         String getParam(const String& name) const
         {
             EnvParams idx=lookup(name);
-            if (idx==ePARAM_UNKNOWN) {
+            if (idx==PARAM_UNKNOWN) {
                 UnknownParamsType::const_iterator it=_uParams.find(name);
                 if (it!=_uParams.end())
                     return it->second;
@@ -96,15 +116,15 @@ namespace Http
         }
 
         String contentType() const {
-            return getParam(ePARAM_CONTENT_TYPE);
+            return getParam(PARAM_CONTENT_TYPE);
         }
 
         String scriptName() const {
-            return getParam(ePARAM_SCRIPT_NAME);
+            return getParam(PARAM_SCRIPT_NAME);
         }
 
         String pathInfo() const {
-            return getParam(ePARAM_PATH_INFO);
+            return getParam(PARAM_PATH_INFO);
         }
 
         uint64_t contentLength() const
@@ -112,14 +132,8 @@ namespace Http
             return _contentLength;
         }
 
-        bool requestVarGet(const String& key, String& value) const
-        {
-            std::map<String, String>::const_iterator it(_getRequest.find(key));
-            if (it==_getRequest.end())
-                return false;
-            value=it->second;
-            return true;
-        }
+        template<typename KeyT, typename ValueT>
+        bool requestVarGet(const KeyT key, ValueT& value) const;
 
         bool requestVarPost(const String& key, String& value) const
         {
@@ -138,12 +152,7 @@ namespace Http
             else
                 _requestMethod=HTTP_METHOD_ERROR;
         }
-#if 0
-        typedef std::map<String, RequestMethod, boost::function< bool(std::string const &, 
-                              std::string const &)> > StaticMMapType;
-        typedef std::map<String, EnvParams, boost::function< bool(std::string const &, 
-                              std::string const &)> > StaticPMapType;
-#endif
+
         typedef std::map<String, RequestMethod> StaticMMapType;
         typedef std::map<String, EnvParams>     StaticPMapType;
 
@@ -153,10 +162,11 @@ namespace Http
         EnvParams lookup(const std::string& name) const {
             StaticPMapType::const_iterator it=_spMap.find(name);
             if (it==_spMap.end())
-                return ePARAM_UNKNOWN;
+                return PARAM_UNKNOWN;
             else
                 return it->second;
         }
+
         void init();
 
         KnownParamsType   _kParams; // known
@@ -215,6 +225,8 @@ namespace Http
             out=make_pair(name, value);
         }
     }
+
+
 }} // fcgi::Http
 
 #endif
