@@ -1,10 +1,13 @@
 #include <boost/noncopyable.hpp>
+// #include <string.h>
 
-#include "FcgiSink.hpp"
+#include "Protocol.hpp"
 #include "Block.hpp"
+#include "FcgiSink.hpp"
+#include "Transceiver.hpp"
 #include "Request.hpp"
 
-#include <string.h>
+using namespace std;
 
 namespace fcgi {
 
@@ -18,8 +21,6 @@ namespace fcgi {
 
     std::streamsize FcgiSink::write(const char_type* src, std::streamsize n)
     {
-        std::string test(src, n);
-
         if (!blk().get())
             newBlock();
 

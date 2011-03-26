@@ -2,25 +2,15 @@
 #include <iostream>
 #include <sstream>
 #include <boost/archive/detail/utf8_codecvt_facet.hpp>
+
 #include "Http.hpp"
 
 using namespace std;
 
-namespace fcgi {
+namespace fcgi
+{
 namespace Http
 {
-#if 0
-    bool str_iless(const std::basic_string<char> & a,
-                   const std::basic_string<char> & b)
-    {
-        return boost::algorithm::lexicographical_compare(a, b,
-                                                         boost::algorithm::is_iless());
-    }
-
-    Environment::StaticPMapType Environment::_spMap(&str_iless);
-    Environment::StaticMMapType Environment::_smMap(&str_iless);
-#endif
-
     Environment::StaticPMapType Environment::_spMap;
     Environment::StaticMMapType Environment::_smMap;
 
@@ -120,77 +110,76 @@ namespace Http
 
         if (size)
         {
-            std::codecvt_base::result result = std::codecvt_base::partial;
+            codecvt_base::result result = codecvt_base::partial;
 
-            while (result == std::codecvt_base::partial)
+            while (result == codecvt_base::partial)
             {
                 wchar_t* bufferIt;
                 const char* dataIt;
 
-                std::mbstate_t conversionState = std::mbstate_t();
-                result = std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t> >(std::locale(std::locale::classic(),
-                        new boost::archive::detail::utf8_codecvt_facet)).in(conversionState, data, data + size, dataIt, buffer, buffer + bufferSize, bufferIt);
+                mbstate_t conversionState = mbstate_t();
+                result = use_facet<codecvt<wchar_t, char, mbstate_t> >
+                    (locale(locale::classic(), new boost::archive::detail::utf8_codecvt_facet))
+                    .in(conversionState, data, data + size, dataIt, buffer, buffer + bufferSize, bufferIt);
 
                 string.append(buffer, bufferIt);
                 size -= (dataIt - data);
                 data = dataIt;
             }
 
-            if (result == std::codecvt_base::error)
+            if (result == codecvt_base::error)
             {
             }
         }
     }
 
     template<> template<>
-    void HttpString<wchar_t>::encode(const std::basic_string<wchar_t>& string, std::ostream& data)
+    void HttpString<wchar_t>::encode(const basic_string<wchar_t>& src, ostream& dst)
     {
         const size_t bufferSize = 512;
         char buffer[bufferSize];
-        size_t size = string.size();
+        size_t size = src.size();
 
-        std::ostream_iterator<char> out(data);
+        ostream_iterator<char> out(dst);
 
         if (size)
         {
-            std::codecvt_base::result result = std::codecvt_base::partial;
+            codecvt_base::result result = codecvt_base::partial;
             char* bufferIt;
-            const wchar_t* stringBegin = string.c_str();
+            const wchar_t* stringBegin = src.c_str();
             const wchar_t* stringIt;
 
-            while (result == std::codecvt_base::partial)
+            while (result == codecvt_base::partial)
             {
-                std::mbstate_t conversionState = std::mbstate_t();
-                result =
-                    std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t> >
-                    (std::locale(std::locale::classic(),
-                                 new boost::archive::detail::utf8_codecvt_facet))
-                    .out(conversionState, stringBegin, stringBegin + size, stringIt,
-                         buffer, buffer + bufferSize, bufferIt);
+                mbstate_t conversionState = mbstate_t();
+                result = use_facet<codecvt<wchar_t, char, mbstate_t> >
+                    (locale(locale::classic(), new boost::archive::detail::utf8_codecvt_facet))
+                    .out(conversionState, stringBegin, stringBegin+size, stringIt, buffer,
+                         buffer+bufferSize, bufferIt);
 
-                std::copy(buffer, bufferIt, out);
+                copy(buffer, bufferIt, out);
                 size -= (stringIt - stringBegin);
                 stringBegin = stringIt;
             }
 
-            if (result == std::codecvt_base::error)
+            if (result == codecvt_base::error)
             {
             }
         }
     }
 
     template<> template<>
-    void HttpString<wchar_t>::encode(const std::basic_string<wchar_t>& string, std::string& data)
+    void HttpString<wchar_t>::encode(const basic_string<wchar_t>& src, std::string& dst)
     {
-        std::ostringstream out;
-        encode(string, static_cast< std::ostream& > (out) );
-        data=out.str();
+        ostringstream out;
+        encode(src, static_cast< ostream& > (out) );
+        dst=out.str();
     }
 
     template<>
     bool Environment::requestVarGet(const String& key, String& value) const
     {
-        std::map<String, String>::const_iterator it(_getRequest.find(key));
+        map<String, String>::const_iterator it(_getRequest.find(key));
         if (it==_getRequest.end())
             return false;
         value=it->second;
@@ -205,9 +194,9 @@ namespace Http
     }
 
     template<>
-    bool Environment::requestVarGet(const String& key, std::basic_string<wchar_t>& wvalue) const
+    bool Environment::requestVarGet(const String& key, basic_string<wchar_t>& wvalue) const
     {
-        std::map<String, String>::const_iterator it(_getRequest.find(key));
+        map<String, String>::const_iterator it(_getRequest.find(key));
         if (it==_getRequest.end())
             return false;
         HttpString<wchar_t>::decode(it->second, wvalue);
@@ -215,34 +204,34 @@ namespace Http
     }
 
     template<>
-    bool Environment::requestVarGet(const char* keyp, std::basic_string<wchar_t>& wvalue) const
+    bool Environment::requestVarGet(const char* keyp, basic_string<wchar_t>& wvalue) const
     {
         const String key(keyp);
-        return requestVarGet<const String&,std::basic_string<wchar_t> > (key, wvalue);
+        return requestVarGet<const String&, basic_string<wchar_t> > (key, wvalue);
     }
 
     template<>
-    bool Environment::requestVarGet(const std::basic_string<wchar_t>& wkey,
-                                    std::basic_string<wchar_t>& wvalue) const
+    bool Environment::requestVarGet(const basic_string<wchar_t>& wkey,
+                                    basic_string<wchar_t>& wvalue) const
     {
-        std::string key;
+        string key;
         HttpString<wchar_t>::encode(wkey, key);
-        return requestVarGet<const String&,std::basic_string<wchar_t> > (key, wvalue);
+        return requestVarGet<const String&, basic_string<wchar_t> > (key, wvalue);
     }
 
     template<>
     bool Environment::requestVarGet(const wchar_t* wkeyp,
-                                    std::basic_string<wchar_t>& wvalue) const
+                                    basic_string<wchar_t>& wvalue) const
     {
-        const std::wstring wkey(wkeyp);
-        return requestVarGet<const std::wstring&, std::wstring>(wkey, wvalue);
+        const wstring wkey(wkeyp);
+        return requestVarGet<const wstring&, wstring>(wkey, wvalue);
     }
 
     template<>
     bool Environment::requestVarGet(const String &key,
                                     unsigned int& ivalue) const
     {
-        std::map<String, String>::const_iterator it(_getRequest.find(key));
+        map<String, String>::const_iterator it(_getRequest.find(key));
         if (it==_getRequest.end())
             return false;
         istringstream istr(it->second);
@@ -251,20 +240,20 @@ namespace Http
     }
 
     template<>
-    bool Environment::requestVarGet(const std::basic_string<wchar_t>& wkey,
+    bool Environment::requestVarGet(const basic_string<wchar_t>& wkey,
                                     unsigned int& ivalue) const
     {
-        std::string key;
+        string key;
         HttpString<wchar_t>::encode(wkey, key);
-        return requestVarGet<const std::string&, unsigned int>(key, ivalue);
+        return requestVarGet<const string&, unsigned int>(key, ivalue);
     }
 
     template<>
     bool Environment::requestVarGet(const wchar_t* wkeyp,
                                     unsigned int& ivalue) const
     {
-        std::wstring wkey(wkeyp);
-        return requestVarGet<const std::wstring&, unsigned int>(wkey, ivalue);
+        wstring wkey(wkeyp);
+        return requestVarGet<const wstring&, unsigned int>(wkey, ivalue);
     }
 
 
@@ -336,6 +325,5 @@ namespace Http
         }
     }
 #endif
-
 }
 }

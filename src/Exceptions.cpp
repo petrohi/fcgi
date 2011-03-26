@@ -1,9 +1,10 @@
 #include <errno.h>
 #include "Exceptions.hpp"
 
-namespace fcgi {
-    namespace Exceptions {
-
+namespace fcgi
+{
+    namespace Exceptions
+    {
         SocketRead::SocketRead(int fd, int erno)
             : Socket(fd, erno)
         {
@@ -116,5 +117,5 @@ namespace fcgi {
                 break;
             }
         }
-
-    }}
+    }
+}
