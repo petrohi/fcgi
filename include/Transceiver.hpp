@@ -112,7 +112,6 @@ namespace fcgi
 
         ManagerHandle&  _manager;
         int             _fd;
-        // struct ev_loop* _loop;
 
         ev::io          _rev;
         ev::io          _wev;

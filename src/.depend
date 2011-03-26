@@ -1,0 +1,19 @@
+Exceptions.o: Exceptions.cpp ../include/Exceptions.hpp
+FcgiSink.o: FcgiSink.cpp ../include/FcgiSink.hpp ../include/Block.hpp \
+ ../include/Protocol.hpp ../include/Request.hpp \
+ ../include/Transceiver.hpp ../include/Exceptions.hpp \
+ ../include/Block.hpp ../include/FcgiSink.hpp
+Http.o: Http.cpp ../include/Http.hpp
+Request.o: Request.cpp ../include/Request.hpp ../include/Transceiver.hpp \
+ ../include/Protocol.hpp ../include/Exceptions.hpp ../include/Block.hpp \
+ ../include/FcgiSink.hpp
+Transceiver.o: Transceiver.cpp ../include/Transceiver.hpp \
+ ../include/Protocol.hpp ../include/Exceptions.hpp ../include/Block.hpp \
+ ../include/Manager.hpp ../include/Transceiver.hpp ../include/Request.hpp \
+ ../include/FcgiSink.hpp ../include/Protocol.hpp
+main.o: main.cpp ../../hiredispp/hiredispp.h \
+ ../../hiredispp/hiredispp_a.h ../include/Manager.hpp \
+ ../include/Transceiver.hpp ../include/Protocol.hpp \
+ ../include/Exceptions.hpp ../include/Block.hpp ../include/Request.hpp \
+ ../include/FcgiSink.hpp ../include/Request.hpp ../include/AppHandler.hpp \
+ ../include/Http.hpp
