@@ -176,47 +176,6 @@ namespace Http
         dst=out.str();
     }
 
-    template<>
-    bool Environment::requestVarGet(const char* keyp, String& value) const
-    {
-        const String key(keyp);
-        return requestVarGet<String> (key, value);
-    }
-
-    template<>
-    bool Environment::requestVarGet(const String& key, basic_string<wchar_t>& wvalue) const
-    {
-        map<String, String>::const_iterator it(_getRequest.find(key));
-        if (it==_getRequest.end())
-            return false;
-        HttpString<wchar_t>::decode(it->second, wvalue);
-        return true;
-    }
-
-    template<>
-    bool Environment::requestVarGet(const char* keyp, basic_string<wchar_t>& wvalue) const
-    {
-        const String key(keyp);
-        return requestVarGet< basic_string<wchar_t> > (key, wvalue);
-    }
-
-    template<>
-    bool Environment::requestVarGet(const basic_string<wchar_t>& wkey,
-                                    basic_string<wchar_t>& wvalue) const
-    {
-        string key;
-        HttpString<wchar_t>::encode(wkey, key);
-        return requestVarGet< basic_string<wchar_t> > (key, wvalue);
-    }
-
-    template<>
-    bool Environment::requestVarGet(const wchar_t* wkeyp,
-                                    basic_string<wchar_t>& wvalue) const
-    {
-        const wstring wkey(wkeyp);
-        return requestVarGet<const wstring&, wstring>(wkey, wvalue);
-    }
-
 #if 0
     template<class In, class Out>
     Out base64Decode(In start, In end, Out destination)

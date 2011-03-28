@@ -134,6 +134,9 @@ namespace Http
             return _contentLength;
         }
 
+        // template<typename KeyT, typename ValueT>
+        // bool requestVarGet(const KeyT key, ValueT& value) const;
+
         template<typename ValueT>
         bool requestVarGet(const String &key, ValueT& value) const
         {
@@ -144,8 +147,28 @@ namespace Http
             return true;
         }
 
-        template<typename KeyT, typename ValueT>
-        bool requestVarGet(const KeyT key, ValueT& value) const;
+        template<typename ValueT>
+        bool requestVarGet(const char* keyp, ValueT& value) const
+        {
+            std::string key(keyp);
+            return requestVarGet<ValueT>(key, value);
+        }
+
+        template<typename ValueT>
+        bool requestVarGet(const std::wstring &wkey, ValueT& value) const
+        {
+            std::string key;
+            HttpString<wchar_t>::encode(wkey, key);
+            return requestVarGet<ValueT>(key, value);
+        }
+
+        template<typename ValueT>
+        bool requestVarGet(const wchar_t* keyp, ValueT& value) const
+        {
+            std::wstring key(keyp);
+            return requestVarGet<ValueT>(key, value);
+        }
+
 
         bool requestVarPost(const String& key, String& value) const
         {
@@ -238,6 +261,15 @@ namespace Http
         }
     }
 
+    template<>
+    inline bool Environment::requestVarGet(const String &key, std::wstring& wvalue) const
+    {
+        std::map<String, String>::const_iterator it(_getRequest.find(key));
+        if (it==_getRequest.end())
+            return false;
+        HttpString<wchar_t>::decode(it->second, wvalue);
+        return true;
+    }
 
 }} // fcgi::Http
 
