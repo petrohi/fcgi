@@ -79,13 +79,14 @@ namespace fcgi
         // void writeStream(uint16_t id, std::string& str, bool isOut=true);
         void writeBlock(boost::shared_ptr<Block> &blk);
 
-    private:
+
         static 
-        void nonblock(int fd)
+        inline void nonblock(int fd)
         {
             fcntl(fd, F_SETFL,(fcntl(fd, F_GETFL)|O_NONBLOCK)|O_NONBLOCK);
         }
 
+    private:
         void resetReadHeader();
 
         class EvIOLock : boost::noncopyable

@@ -20,6 +20,7 @@ namespace fcgi
         Acceptor(ManagerT& manager, uint32_t fd, struct ev_loop* loop=EV_DEFAULT)
             : _manager(manager), _fd(fd), _rev(loop)
         {
+            Transceiver::nonblock(_fd);
             _rev.set < ThisType, &ThisType::evRead  > (this);
             _rev.start(_fd, ev::READ);
         }
