@@ -77,8 +77,9 @@ namespace Http
     void Environment::processParams()
     {
         setRequestMethod(getParam(PARAM_REQUEST_METHOD));
-        parseURI(getParam(PARAM_QUERY_STRING).begin(),
-                 getParam(PARAM_QUERY_STRING).end(),
+        string query(getParam(PARAM_QUERY_STRING));
+        parseURI(query.begin(),
+                 query.end(),
                  inserter(_getRequest, _getRequest.begin()));
         std::istringstream(getParam(PARAM_CONTENT_LENGTH)) >> _contentLength;
     }
@@ -140,10 +141,9 @@ namespace Http
         char buffer[bufferSize];
         size_t size = src.size();
 
-        ostream_iterator<char> out(dst);
-
         if (size)
         {
+            ostream_iterator<char> out(dst);
             codecvt_base::result result = codecvt_base::partial;
             char* bufferIt;
             const wchar_t* stringBegin = src.c_str();

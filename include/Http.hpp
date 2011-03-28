@@ -169,7 +169,6 @@ namespace Http
             return requestVarGet<ValueT>(key, value);
         }
 
-
         bool requestVarPost(const String& key, String& value) const
         {
             std::map<String, String>::const_iterator it(_postRequest.find(key));
@@ -258,6 +257,7 @@ namespace Http
             it=++it2;
 
             out=make_pair(name, value);
+            std::cout << "parseURI " << name << " " << value << std::endl;
         }
     }
 
@@ -268,6 +268,16 @@ namespace Http
         if (it==_getRequest.end())
             return false;
         HttpString<wchar_t>::decode(it->second, wvalue);
+        return true;
+    }
+
+    template<>
+    inline bool Environment::requestVarGet(const String &key, String& value) const
+    {
+        std::map<String, String>::const_iterator it(_getRequest.find(key));
+        if (it==_getRequest.end())
+            return false;
+        value = it->second;
         return true;
     }
 
