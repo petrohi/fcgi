@@ -1,10 +1,12 @@
 #ifndef _FcgiHttp_h_
 #define _FcgiHttp_h_
 
+#include <stdint.h>
 #include <map>
 #include <boost/array.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/compare.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace fcgi 
 {
@@ -130,6 +132,16 @@ namespace Http
         uint64_t contentLength() const
         {
             return _contentLength;
+        }
+
+        template<typename ValueT>
+        bool requestVarGet(const String &key, ValueT& value) const
+        {
+            std::map<String, String>::const_iterator it(_getRequest.find(key));
+            if (it==_getRequest.end())
+                return false;
+            value = boost::lexical_cast<ValueT>(it->second);
+            return true;
         }
 
         template<typename KeyT, typename ValueT>

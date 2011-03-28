@@ -12,7 +12,7 @@ INSTALL_INC = $(PREFIX)/include/fcgi
 INSTALL_LIB = $(PREFIX)/lib
 INSTALL = install -m 0644
 
-all: .depend $(EXAMPLE) $(FCGILIB)
+all: .depend $(FCGILIB)
 
 $(EXAMPLE): $(OBJS) $(FCGILIB)
 	$(CXX) -o async $(OBJS) $(FCGILIB) -lhiredis -lboost_wserialization /usr/local/lib/libev.a

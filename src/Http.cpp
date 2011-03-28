@@ -177,20 +177,10 @@ namespace Http
     }
 
     template<>
-    bool Environment::requestVarGet(const String& key, String& value) const
-    {
-        map<String, String>::const_iterator it(_getRequest.find(key));
-        if (it==_getRequest.end())
-            return false;
-        value=it->second;
-        return true;
-    }
-
-    template<>
     bool Environment::requestVarGet(const char* keyp, String& value) const
     {
         const String key(keyp);
-        return requestVarGet<const String&, String> (key, value);
+        return requestVarGet<String> (key, value);
     }
 
     template<>
@@ -207,7 +197,7 @@ namespace Http
     bool Environment::requestVarGet(const char* keyp, basic_string<wchar_t>& wvalue) const
     {
         const String key(keyp);
-        return requestVarGet<const String&, basic_string<wchar_t> > (key, wvalue);
+        return requestVarGet< basic_string<wchar_t> > (key, wvalue);
     }
 
     template<>
@@ -216,7 +206,7 @@ namespace Http
     {
         string key;
         HttpString<wchar_t>::encode(wkey, key);
-        return requestVarGet<const String&, basic_string<wchar_t> > (key, wvalue);
+        return requestVarGet< basic_string<wchar_t> > (key, wvalue);
     }
 
     template<>
@@ -226,36 +216,6 @@ namespace Http
         const wstring wkey(wkeyp);
         return requestVarGet<const wstring&, wstring>(wkey, wvalue);
     }
-
-    template<>
-    bool Environment::requestVarGet(const String &key,
-                                    unsigned int& ivalue) const
-    {
-        map<String, String>::const_iterator it(_getRequest.find(key));
-        if (it==_getRequest.end())
-            return false;
-        istringstream istr(it->second);
-        istr >> ivalue;
-        return true;
-    }
-
-    template<>
-    bool Environment::requestVarGet(const basic_string<wchar_t>& wkey,
-                                    unsigned int& ivalue) const
-    {
-        string key;
-        HttpString<wchar_t>::encode(wkey, key);
-        return requestVarGet<const string&, unsigned int>(key, ivalue);
-    }
-
-    template<>
-    bool Environment::requestVarGet(const wchar_t* wkeyp,
-                                    unsigned int& ivalue) const
-    {
-        wstring wkey(wkeyp);
-        return requestVarGet<const wstring&, unsigned int>(wkey, ivalue);
-    }
-
 
 #if 0
     template<class In, class Out>
