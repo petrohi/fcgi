@@ -118,7 +118,11 @@ namespace Http
         }
 
         String contentType() const {
-            return getParam(PARAM_CONTENT_TYPE);
+            String::size_type pos=_kParams[PARAM_CONTENT_TYPE].find(';');
+            if (pos == String::npos)
+                return _kParams[PARAM_CONTENT_TYPE];
+            else
+                return _kParams[PARAM_CONTENT_TYPE].substr(0, pos);
         }
 
         String scriptName() const {
