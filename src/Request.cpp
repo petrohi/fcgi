@@ -40,7 +40,7 @@ namespace fcgi {
             return 1;
         }
         else {
-            len = ntohl(*((uint32_t*)data));
+            len = 0x7fffffff & ntohl(*((uint32_t*)&(data[0])));
             return 4;
         }
     }
