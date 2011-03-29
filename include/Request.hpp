@@ -8,6 +8,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/iostreams/stream.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 #include "Transceiver.hpp"
 #include "FcgiSink.hpp"
@@ -15,7 +16,7 @@
 namespace fcgi
 {
     class Transceiver;
-    class RequestBase : boost::noncopyable
+    class RequestBase : boost::noncopyable, public boost::enable_shared_from_this<RequestBase>
     {
     public:
         RequestBase(boost::shared_ptr<Transceiver> &tr) :
@@ -70,6 +71,7 @@ namespace fcgi
 
         void handleParams(boost::shared_ptr<Message> &msg) {
             size_t size=msg->size();
+            std::cout << "handleParams size "<< size << std::endl;
             if (size) {
                 const char* data=msg->getData<char>();
                 size_t i=0;
@@ -78,6 +80,7 @@ namespace fcgi
                     uint32_t valueLen=0;
                     i+=getNVLength(data+i, nameLen);
                     i+=getNVLength(data+i, valueLen);
+                    std::cout << "handleParams lens: "<< nameLen <<"," <<valueLen << std::endl;
                     std::string name(data+i, nameLen);
                     std::string value(data+i+nameLen, valueLen);
                     i+=nameLen+valueLen;

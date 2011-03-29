@@ -77,6 +77,11 @@ namespace Http
     void Environment::processParams()
     {
         setRequestMethod(getParam(PARAM_REQUEST_METHOD));
+
+        String::size_type pos=_kParams[PARAM_CONTENT_TYPE].find(';');
+        _contentType=(pos==String::npos ? _kParams[PARAM_CONTENT_TYPE] :
+                      _kParams[PARAM_CONTENT_TYPE].substr(0, pos));
+        
         string query(getParam(PARAM_QUERY_STRING));
         parseURI(query.begin(),
                  query.end(),

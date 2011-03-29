@@ -141,7 +141,7 @@ namespace fcgi
             case ABORT_REQUEST:
                 if (isReqs && rIt!=rEnd) {
                     rIt->second->handleAbort(message);
-                    cIt->second.erase(rIt);
+                    // cIt->second.erase(rIt);
                 }
                 break;
             case GET_VALUES:
@@ -248,12 +248,11 @@ namespace fcgi
         }
 
         void close(uint32_t fd) {
-            _reqs.erase(fd);
-            ConnsType::iterator cIt=_conns.find(fd);
-            if (cIt!=_conns.end()) {
-                // cIt->second->close();
-                _conns.erase(cIt);
-            }
+#ifdef FCGI_DEBUG
+            std::cout<<"FCGI ["<<fd<<"] close" <<std::endl;
+#endif
+            _reqs.erase(fd);  // remove all shared_ptr<Requests>
+            _conns.erase(fd); // remove shared_ptr<Transceiver>
         }
 
         void accept(uint32_t fd) {

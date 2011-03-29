@@ -118,11 +118,7 @@ namespace Http
         }
 
         String contentType() const {
-            String::size_type pos=_kParams[PARAM_CONTENT_TYPE].find(';');
-            if (pos == String::npos)
-                return _kParams[PARAM_CONTENT_TYPE];
-            else
-                return _kParams[PARAM_CONTENT_TYPE].substr(0, pos);
+            return _contentType;
         }
 
         String scriptName() const {
@@ -210,6 +206,7 @@ namespace Http
         KnownParamsType   _kParams; // known
         UnknownParamsType _uParams; // unknown
         RequestMethod     _requestMethod;
+        String            _contentType;
         String            _postBuffer;
         uint64_t          _contentLength;
 
@@ -261,7 +258,6 @@ namespace Http
             it=++it2;
 
             out=make_pair(name, value);
-            std::cout << "parseURI " << name << " " << value << std::endl;
         }
     }
 
