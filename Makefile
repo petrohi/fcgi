@@ -1,5 +1,5 @@
 all: 
-	cd src ; make
+	cd src ; make all
 
 install:
 	cd src ; make install

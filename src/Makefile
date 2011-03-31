@@ -1,18 +1,23 @@
 EXAMPLE = async
 FCGILIB = libfcgi.a
-OBJS =  main.o
-LIBOBJS = Exceptions.o Transceiver.o Request.o FcgiSink.o Http.o hiredispp.o
+OBJS =  main.o hiredispp.o
+
+LIBOBJS = Exceptions.o Transceiver.o Request.o FcgiSink.o Http.o
 INCLUDES = -I../include -I.. -I../..
 
 HEADERS = fcgi.hpp Block.hpp Exceptions.hpp FcgiSink.hpp \
 	Http.hpp Manager.hpp Protocol.hpp Request.hpp Transceiver.hpp
+
+SOURCES = Exceptions.cpp FcgiSink.cpp Http.cpp Request.cpp Transceiver.cpp
 
 PREFIX = /usr/local
 INSTALL_INC = $(PREFIX)/include/fcgi
 INSTALL_LIB = $(PREFIX)/lib
 INSTALL = install -m 0644
 
-all: .depend $(FCGILIB) $(EXAMPLE)
+all: .depend $(FCGILIB)
+
+example: $(EXAMPLE)
 
 $(EXAMPLE): $(OBJS) $(FCGILIB)
 	$(CXX) -o async $(OBJS) $(FCGILIB) -lhiredis -lboost_wserialization -lev
@@ -28,7 +33,7 @@ $(FCGILIB): $(LIBOBJS)
 clean:
 	rm -f *.o
 
-.depend dep:
+.depend dep: $(SOURCES)
 	$(CXX) $(INCLUDES) -MM *.cpp > .depend
 
 install: ${FCGILIB}
