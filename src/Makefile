@@ -1,8 +1,8 @@
 EXAMPLE = async
 FCGILIB = libfcgi.a
 OBJS =  main.o
-LIBOBJS = Exceptions.o Transceiver.o Request.o FcgiSink.o Http.o 
-INCLUDES = -I../include -I..
+LIBOBJS = Exceptions.o Transceiver.o Request.o FcgiSink.o Http.o hiredispp.o
+INCLUDES = -I../include -I.. -I../..
 
 HEADERS = fcgi.hpp Block.hpp Exceptions.hpp FcgiSink.hpp \
 	Http.hpp Manager.hpp Protocol.hpp Request.hpp Transceiver.hpp
@@ -12,10 +12,12 @@ INSTALL_INC = $(PREFIX)/include/fcgi
 INSTALL_LIB = $(PREFIX)/lib
 INSTALL = install -m 0644
 
-all: .depend $(FCGILIB)
+all: .depend $(FCGILIB) $(EXAMPLE)
 
 $(EXAMPLE): $(OBJS) $(FCGILIB)
-	$(CXX) -o async $(OBJS) $(FCGILIB) -lhiredis -lboost_wserialization /usr/local/lib/libev.a
+	$(CXX) -o async $(OBJS) $(FCGILIB) -lhiredis -lboost_wserialization -lev
+
+#  /usr/local/lib/libev.a
 
 $(FCGILIB): $(LIBOBJS)
 	$(AR) cr $(FCGILIB) $(LIBOBJS)

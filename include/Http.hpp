@@ -28,6 +28,7 @@ namespace Http
         PARAM_CONTENT_LENGTH=0,
         PARAM_CONTENT_TYPE,
         PARAM_DOCUMENT_ROOT,
+        PARAM_GATEWAY_INTERFACE,
         PARAM_HTTP_ACCEPT,
         PARAM_HTTP_ACCEPT_CHARSET,
         PARAM_HTTP_ACCEPT_LANGUAGE,
@@ -38,7 +39,6 @@ namespace Http
         PARAM_HTTP_KEEP_ALIVE,
         PARAM_HTTP_REFERER,
         PARAM_HTTP_USER_AGENT,
-        PARAM_GATEWAY_INTERFACE,
         PARAM_PATH_INFO,
         PARAM_QUERY_STRING,
         PARAM_REDIRECT_STATUS,
@@ -178,6 +178,14 @@ namespace Http
             return true;
         }
 
+        typedef std::map<String, RequestMethod> StaticMMapType;
+        typedef std::map<String, EnvParams>     StaticPMapType;
+
+        static const StaticPMapType& paramsMap() { return _spMap; }
+
+        const std::map<String, String>& getRequestMap() const { return _getRequest; }
+        const std::map<String, String>& postRequestMap() const { return _postRequest; }
+
     private:
         void setRequestMethod(const String& value) {
             StaticMMapType::const_iterator it(_smMap.find(value));
@@ -186,9 +194,6 @@ namespace Http
             else
                 _requestMethod=HTTP_METHOD_ERROR;
         }
-
-        typedef std::map<String, RequestMethod> StaticMMapType;
-        typedef std::map<String, EnvParams>     StaticPMapType;
 
         static StaticPMapType _spMap;
         static StaticMMapType _smMap;
@@ -201,7 +206,7 @@ namespace Http
                 return it->second;
         }
 
-        void init();
+        static void init();
 
         KnownParamsType   _kParams; // known
         UnknownParamsType _uParams; // unknown

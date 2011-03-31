@@ -64,7 +64,7 @@ namespace fcgi
     public:
         RequestHandler(boost::shared_ptr<Transceiver> &tr, boost::shared_ptr<Message> &msg) :
             RequestBase(tr),
-            _appHandler(*this)
+            _appHandler(new AppHandlerT(*this))
         {
             init(msg);
         }
@@ -84,29 +84,29 @@ namespace fcgi
                     std::string name(data+i, nameLen);
                     std::string value(data+i+nameLen, valueLen);
                     i+=nameLen+valueLen;
-                    _appHandler.params(name, value);
+                    _appHandler->params(name, value);
                 }
             }
             else
-                _appHandler.processParams();
+                _appHandler->processParams();
         }
 
         void handleIN(boost::shared_ptr<Message> &msg) {
-            _appHandler.postData(msg->getData<char>(), msg->size());
+            _appHandler->postData(msg->getData<char>(), msg->size());
             if (msg->size()==0)
-                _appHandler.processRequest();
+                _appHandler->processRequest();
         }
         
         void handleData(boost::shared_ptr<Message> &msg) {
-            _appHandler.data(msg->getData<char>(), msg->size());
+            _appHandler->data(msg->getData<char>(), msg->size());
         }
 
         void handleAbort(boost::shared_ptr<Message> &msg) {
-            _appHandler.abort();
+            _appHandler->abort();
         }
 
         void handleError(const Exceptions::FcgiException& ex) {
-            _appHandler.handleError(ex);
+            _appHandler->handleError(ex);
         }
 
     private:
@@ -119,7 +119,7 @@ namespace fcgi
         }
 
         boost::shared_ptr<Transceiver> _tr;
-        AppHandlerT _appHandler;
+        boost::shared_ptr<AppHandlerT> _appHandler;
     };
 
 }

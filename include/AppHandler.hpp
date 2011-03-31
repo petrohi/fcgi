@@ -10,10 +10,11 @@ namespace fcgi
     class RequestBase;
     
     // just one of a possible application handler implementations.
-    class BaseAppHandler
+    class BaseAppHandler 
     {
     public:
         BaseAppHandler(RequestBase& base) : _base(base) {}
+        virtual ~BaseAppHandler() {}
 
         // void init() {
         // }
@@ -28,6 +29,7 @@ namespace fcgi
             _env.processParams();
         }
 
+#if 0
         void processRequest()
         {
             std::cout << "App::Process"<<std::endl;
@@ -46,7 +48,7 @@ namespace fcgi
             _base.errstream() << "Error test\r\n\r\n" << std::endl;
             _base.requestComplete(0);
         }
-
+#endif
         // size=0 means end of post data, ready to execute an request
         void postData(const char* data, size_t size)
         {
