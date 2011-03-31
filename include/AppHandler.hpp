@@ -13,7 +13,7 @@ namespace fcgi
     class BaseAppHandler 
     {
     public:
-        BaseAppHandler(RequestBase& base) : _base(base) {}
+        BaseAppHandler(RequestBase* base) : _base(base) {}
         virtual ~BaseAppHandler() {}
 
         // void init() {
@@ -33,20 +33,20 @@ namespace fcgi
         void processRequest()
         {
             std::cout << "App::Process"<<std::endl;
-            _base.outstream() << "Status: 200\r\n"
+            _base->outstream() << "Status: 200\r\n"
                 "Content-Type: application/json; charset=utf-8\r\n\r\n";
             for (int i=0; i<Http::PARAM_NUM_MAX; ++i) {
-                _base.outstream()<<"PARAM "
+                _base->outstream()<<"PARAM "
                                  <<i<<" "
                                  <<_env.getParam((Http::EnvParams)i)<<"\r\n";
             }
 
-            //_base.outstream()<<"{test=\"test\", id=\""<<i<<"\"}\r\n";
-            // _base.errstream()<<"debug cycle"<<i<<"\n";
+            //_base->outstream()<<"{test=\"test\", id=\""<<i<<"\"}\r\n";
+            // _base->errstream()<<"debug cycle"<<i<<"\n";
             //    // std::cout<<i<<std::endl;
             
-            _base.errstream() << "Error test\r\n\r\n" << std::endl;
-            _base.requestComplete(0);
+            _base->errstream() << "Error test\r\n\r\n" << std::endl;
+            _base->requestComplete(0);
         }
 #endif
         // size=0 means end of post data, ready to execute an request
@@ -66,13 +66,19 @@ namespace fcgi
         // WebServer requests to abort a request
         void abort() {
             std::cout << "App::ABORT"<<std::endl;
-            _base.requestComplete(0);
+            _base->requestComplete(0);
         }
 
         void handleError(const Exceptions::FcgiException& ex) {
         }
 
-        RequestBase& _base;
+        // after this call, the RequestBase* is invalid,
+        // should not be used, set _base to NULL.
+        void handleDelete() {
+            _base=NULL;
+        }
+
+        RequestBase* _base;
 
         Http::Environment _env;
     };

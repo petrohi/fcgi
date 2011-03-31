@@ -62,16 +62,20 @@ namespace fcgi
     {
         typedef RequestHandler<AppHandlerT> ThisType;
     public:
-        RequestHandler(boost::shared_ptr<Transceiver> &tr, boost::shared_ptr<Message> &msg) :
+        RequestHandler(boost::shared_ptr<Transceiver> &tr,
+                       boost::shared_ptr<Message> &msg) :
             RequestBase(tr),
-            _appHandler(new AppHandlerT(*this))
+            _appHandler(new AppHandlerT(this)) // not a shared_ptr, avoid a loop.
         {
             init(msg);
         }
 
+        ~RequestHandler() {
+            _appHandler->handleDelete();
+        }
+
         void handleParams(boost::shared_ptr<Message> &msg) {
             size_t size=msg->size();
-            std::cout << "handleParams size "<< size << std::endl;
             if (size) {
                 const char* data=msg->getData<char>();
                 size_t i=0;
@@ -80,7 +84,8 @@ namespace fcgi
                     uint32_t valueLen=0;
                     i+=getNVLength(data+i, nameLen);
                     i+=getNVLength(data+i, valueLen);
-                    std::cout << "handleParams lens: "<< nameLen <<"," <<valueLen << std::endl;
+                    if (i+nameLen+valueLen>size)
+                        return;
                     std::string name(data+i, nameLen);
                     std::string value(data+i+nameLen, valueLen);
                     i+=nameLen+valueLen;

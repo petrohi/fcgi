@@ -64,48 +64,52 @@ public:
 class App : public BaseAppHandler, public boost::enable_shared_from_this<App>
 {
 public:
-    App(RequestBase& base) : BaseAppHandler(base) {}
+    App(RequestBase* base) : BaseAppHandler(base) {}
 
     void execDone(RedisConnectionAsync& ac, Redis::Element* reply)
     {
-        if (reply) {
-            vector<string> v;
-            reply->toVector(v);
-            copy(v.begin(), v.end(), ostream_iterator<string>(_base.outstream(), " "));
+        if (_base==NULL) {
+            cout<< "execDone: fcgi request deleted, can't reply." << endl;
+            return;
         }
-        _base.outstream()<<"done"<<endl;
-        _base.requestComplete(-1);
+        if (reply) {
+            //vector<string> v;
+            //reply->toVector(v);
+            //copy(v.begin(), v.end(), ostream_iterator<string>(_base->outstream(), " "));
+        }
+        _base->outstream()<<"done"<<endl;
+        _base->requestComplete(-1);
     }
 
     void processRequest()
     {
         std::cout << "App::Process"<<std::endl;
-        _base.outstream() << "Status: 200\r\n"
+        _base->outstream() << "Status: 200\r\n"
             "Content-Type: application/json; charset=utf-8\r\n\r\n{ [\n";
         Environment::StaticPMapType::const_iterator it(Http::Environment::paramsMap().begin()),
             end(Http::Environment::paramsMap().end());
         while (it!=end) {
-            _base.outstream()<<"{ PARAM_ID="
+            _base->outstream()<<"{ PARAM_ID="
                              <<it->second<<", name=\""
                              <<it->first<<"\", value=\""
                              <<_env.getParam(it->second)
                              <<"\" }";
             ++it;
-            _base.outstream()<<((it==end) ? " " : ",\n" );
+            _base->outstream()<<((it==end) ? " " : ",\n" );
         }
-        _base.outstream() <<"]\n";
+        _base->outstream() <<"]\n";
         try {
             if (_env.getParam(PARAM_SCRIPT_NAME) == "/connectRedis") {
                 if (__main==NULL) {
                     string host;
                     int    port;
                     if (_env.requestVarGet("host", host) && _env.requestVarGet("port", port)) {
-                        _base.outstream() <<"connectRedis "<< host <<":" << port <<"\n";
+                        _base->outstream() <<"connectRedis "<< host <<":" << port <<"\n";
                         __main = new Main(host,port);
                     }
                 }
                 else {
-                    _base.outstream() <<"connectRedis - connection exists, close it first."
+                    _base->outstream() <<"connectRedis - connection exists, close it first."
                                       << std::endl;
                 }
             }
@@ -114,7 +118,7 @@ public:
                 if (__main && __main->_connected && _env.requestVarGet("name", name)) {
                     RedisCommandBase<char> cmd(name);
                     
-                    _base.outstream() <<"execCmd '"<<name;
+                    _base->outstream() <<"execCmd '"<<name;
                     
                     int i=0; string param;
                     while (true) {
@@ -123,9 +127,9 @@ public:
                         if (!_env.requestVarGet(paramName.str(), param))
                             break;
                         cmd << param;
-                        _base.outstream() << " " << param;
+                        _base->outstream() << " " << param;
                     }
-                    _base.outstream() <<"'\n";
+                    _base->outstream() <<"'\n";
 
                     map<string,string>::const_iterator it(_env.getRequestMap().begin()),
                         end(_env.getRequestMap().end());
@@ -141,22 +145,21 @@ public:
                     return;
                 }
                 else {
-                    _base.outstream() <<"open connection first."
+                    _base->outstream() <<"open connection first."
                                       << std::endl;
                 }
             }
         }
         catch (const RedisException& ex) {
-            _base.outstream() << "{ RedisException=\""<< ex.what() << "\"} }\n\r\n";
+            _base->outstream() << "{ RedisException=\""<< ex.what() << "\"} }\n\r\n";
         }
-        _base.outstream() << "}\n\r\n";
-        _base.requestComplete(0);
+        _base->outstream() << "}\n\r\n";
+        _base->requestComplete(0);
     }
 
 private:
-    //    string host("127.0.0.1");
+    //string host("127.0.0.1");
     //int port=6379;
-    
 };
 
 namespace std {

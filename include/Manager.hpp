@@ -171,13 +171,13 @@ namespace fcgi
         virtual void readError(const Exceptions::Socket& ex)
         {
             errorNotify(ex);
-            close(ex._fd);
+            closeTransceiver(ex._fd);
         }
 
         virtual void writeError(const Exceptions::Socket& ex)
         {
             errorNotify(ex);
-            close(ex._fd);
+            closeTransceiver(ex._fd);
         }
 
         void processGetValues(boost::shared_ptr<Transceiver> &tr,
@@ -235,7 +235,7 @@ namespace fcgi
                 mIt->second.erase(id);
             }
             if (!keepConnection) {
-                close(fd);
+                removeFd(fd);
             }
         }
 
@@ -247,7 +247,18 @@ namespace fcgi
                 rIt=(*mIt).second.erase(id);
         }
 
-        void close(uint32_t fd) {
+        void closeTransceiver(uint32_t fd) {
+            typename RequestsType::iterator cIt=_reqs.find(fd);
+            if (cIt!=_reqs.end()) {
+                cIt->second->close();
+                _reqs.erase(cIt);
+            }
+            _reqs.erase(fd);
+        }
+
+        // do not actually close the connection, just remove all
+        // associated shared_ptr: Requests and Transceiver
+        void removeFd(uint32_t fd) {
 #ifdef FCGI_DEBUG
             std::cout<<"FCGI ["<<fd<<"] close" <<std::endl;
 #endif

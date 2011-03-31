@@ -20,15 +20,22 @@ namespace fcgi {
         // std::cout << "Transceiver::new transceiver " << _fd << std::endl;
     }
 
-    void Transceiver::close() {
-        _rev.stop();
-        _wev.stop();
+    void Transceiver::close()
+    {
         if (_fd!=-1) {
+            _rev.stop();
+            _wev.stop();
+
+            std::queue<boost::shared_ptr<Block> > empty;
+            std::swap(empty, _queue);
+        
             ::close(_fd);
             _fd=-1;
         }
     }
-    Transceiver::~Transceiver() {
+
+    Transceiver::~Transceiver()
+    {
         close();
     }
 
@@ -58,6 +65,7 @@ namespace fcgi {
         }
         catch (const Exceptions::Socket& ex) {
             _manager.readError(ex);
+            // close(); // do not close here, Manager call close() 
         }
     }
 
@@ -140,6 +148,7 @@ namespace fcgi {
         }
         catch (const Exceptions::SocketWrite& ex) {
             _manager.writeError(ex);
+            // close(); // do not close here, Manager call close() 
         }
     }
 
