@@ -248,10 +248,10 @@ namespace fcgi
         }
 
         void closeTransceiver(uint32_t fd) {
-            typename RequestsType::iterator cIt=_reqs.find(fd);
-            if (cIt!=_reqs.end()) {
-                cIt->second->close();
-                _reqs.erase(cIt);
+            typename ConnsType::iterator it=_conns.find(fd);
+            if (it!=_conns.end()) {
+                it->second->close();
+                _conns.erase(it);
             }
             _reqs.erase(fd);
         }
