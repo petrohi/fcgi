@@ -6,6 +6,7 @@
 #include "FcgiSink.hpp"
 #include "Transceiver.hpp"
 #include "Request.hpp"
+#include "Http.hpp"
 
 using namespace std;
 
@@ -55,6 +56,14 @@ namespace fcgi {
     void FcgiSink::newBlock()
     {
         blk().reset(Block::stream(_rq.getId(), _out, _size));
+    }
+
+    std::streamsize ConverterSink::write(const char_type* src, std::streamsize n)
+    {
+        std::wstring str(src,n);
+        Http::HttpString<wchar_t>::encode(str,
+                                          static_cast<std::ostream&>(_rq._ostream));
+        return n;
     }
 
 }

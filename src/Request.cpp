@@ -27,6 +27,8 @@ namespace fcgi {
 
     void RequestBase::flushStreams()
     {
+        // order is important
+        _wstream.flush(); 
         _ostream.flush();
         _estream.flush();
         flush(_outStreamBlk);

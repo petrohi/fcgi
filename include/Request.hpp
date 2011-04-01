@@ -33,13 +33,16 @@ namespace fcgi
 
         std::ostream& outstream() { return _ostream; }
         std::ostream& errstream() { return _estream; }
+        std::wostream& wostream() { return _wstream; }
 
         void requestComplete(uint32_t status);
 
     protected:
         typedef boost::iostreams::stream<FcgiSink> Stream;
+        typedef boost::iostreams::stream<ConverterSink> Wstream;
 
         friend class FcgiSink;
+        friend class ConverterSink;
 
         void flush(boost::shared_ptr<Block> &blk);
         void flushStreams();
@@ -48,6 +51,7 @@ namespace fcgi
         boost::shared_ptr<Block>  _errStreamBlk;
         Stream           _ostream;
         Stream           _estream;
+        Wstream          _wstream;
 
         boost::shared_ptr<Transceiver> _tr;
 
@@ -125,7 +129,9 @@ namespace fcgi
 
         boost::shared_ptr<Transceiver> _tr;
         boost::shared_ptr<AppHandlerT> _appHandler;
+
     };
+
 
 }
 

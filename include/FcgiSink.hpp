@@ -34,6 +34,22 @@ namespace fcgi {
         static const std::streamsize _size;
     };
 
+    class ConverterSink 
+    {
+    public:
+        typedef wchar_t                      char_type;
+        typedef boost::iostreams::sink_tag    category;
+
+        ConverterSink(RequestBase& rq)
+            : _rq(rq)
+        {}
+
+        std::streamsize write(const char_type* src, std::streamsize n);
+
+    private:
+        RequestBase& _rq;
+    };
+
 }
 
 #endif
