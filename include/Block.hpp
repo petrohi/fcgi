@@ -31,7 +31,7 @@ namespace fcgi
         }
 
         EndRequestRecord* getEndRequestRecord() const {
-            return (EndRequestRecord*)(_data.c_str() + sizeof(RecordHeader));
+            return (EndRequestRecord*)(_data.data() + sizeof(RecordHeader));
         }
 
         static Block* createBlock(RecordType type, uint16_t id, std::string& str) {

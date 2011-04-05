@@ -12,7 +12,9 @@ using namespace std;
 
 namespace fcgi {
 
-    const std::streamsize FcgiSink::_size = 65480; // 0xffda;
+    // 65536-128, good for 32 and 64 bit allocators
+    // this way we get the biggest block under 64K
+    const std::streamsize FcgiSink::_size = 0xff80;
     
     inline
     boost::shared_ptr<Block>& FcgiSink::blk()
@@ -27,7 +29,7 @@ namespace fcgi {
 
         std::streamsize size = blk()->data().capacity()-1;
 
-        if (size>0xffff) {
+        if (size>0xfff0) {
 #ifdef FCGI_DEBUG
             std::cout << "[" << n <<"] size="<<blk()->data().size()
                       << " capacity=" << blk()->data().capacity()<< std::endl;
