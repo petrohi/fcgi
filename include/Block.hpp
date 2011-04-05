@@ -22,10 +22,12 @@ namespace fcgi
             _data.reserve(len+sizeof(RecordHeader));
             _data.resize(sizeof(RecordHeader), '\0');
             getRecordHeader()->init(fcgiProtoVersion, type, id, 0);
-            // std::cout<<"Block("
-            //         <<type<<","<<id<<","<<len
-            //         <<") size:"<<_data.size()
-            //         <<" capacity:"<<_data.capacity()<<std::endl;
+#ifdef FCGI_DEBUG
+            std::cout<<"Block("
+                     <<type<<","<<id<<","<<len
+                     <<") size:"<<_data.size()
+                     <<" capacity:"<<_data.capacity()<<std::endl;
+#endif
         }
 
         EndRequestRecord* getEndRequestRecord() const {

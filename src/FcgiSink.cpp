@@ -27,8 +27,13 @@ namespace fcgi {
 
         std::streamsize size = blk()->data().capacity()-1;
 
-        // std::cout << "[" << n <<"] size="<<blk()->data().size()
-        //          << " capacity=" << blk()->data().capacity()<< std::endl;
+        if (size>0xffff) {
+#ifdef FCGI_DEBUG
+            std::cout << "[" << n <<"] size="<<blk()->data().size()
+                      << " capacity=" << blk()->data().capacity()<< std::endl;
+#endif
+            size=0xfff0;
+        }
 
         std::streamsize dataToWrite=n;
 
