@@ -36,6 +36,7 @@ namespace fcgi {
 
     class ConverterSink 
     {
+        ConverterSink();
     public:
         typedef wchar_t                      char_type;
         typedef boost::iostreams::sink_tag    category;

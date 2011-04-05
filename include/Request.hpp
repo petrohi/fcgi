@@ -22,6 +22,7 @@ namespace fcgi
         RequestBase(boost::shared_ptr<Transceiver> &tr) :
             _ostream(*this, true),
             _estream(*this, false),
+            _wstream(*this),
             _tr(tr), _id(0)
         {}
 
