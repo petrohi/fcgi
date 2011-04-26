@@ -8,7 +8,7 @@
 #include "Transceiver.hpp"
 #include "Request.hpp"
 
-#define FCGI_DEBUG
+//#define FCGI_DEBUG
 
 namespace fcgi
 {
