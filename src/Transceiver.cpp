@@ -71,7 +71,7 @@ namespace fcgi {
 
     size_t Transceiver::readdata(void* ptr, size_t expect)
     {
-        int result=read(_fd, ptr, expect);
+        int result=recv(_fd, ptr, expect, MSG_NOSIGNAL);
         int erno=errno;
 
         if (result>0) {
@@ -123,7 +123,7 @@ namespace fcgi {
                     else
                         ptr=blk->getData().data()+(blk->getData().size()-_expectWrite);
 
-                    size_t awrite=write(_fd, ptr, _expectWrite);
+                    size_t awrite=send(_fd, ptr, _expectWrite, MSG_NOSIGNAL);
                     int erno = errno;
                     // std::cout << "evwrite "<<_fd<<" size "<<_expectWrite
                     //          <<" written "<<awrite<<std::endl;
