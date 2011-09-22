@@ -26,11 +26,11 @@ namespace fcgi {
             _rev.stop();
             _wev.stop();
 
-            std::queue<boost::shared_ptr<Block> > empty;
-            std::swap(empty, _queue);
-        
             ::close(_fd);
             _fd=-1;
+
+            std::queue<boost::shared_ptr<Block> > empty;
+            std::swap(empty, _queue);
         }
     }
 
@@ -65,7 +65,7 @@ namespace fcgi {
         }
         catch (const Exceptions::Socket& ex) {
             _manager.readError(ex);
-            // close(); // do not close here, Manager call close() 
+            close();
         }
     }
 
@@ -148,7 +148,7 @@ namespace fcgi {
         }
         catch (const Exceptions::SocketWrite& ex) {
             _manager.writeError(ex);
-            // close(); // do not close here, Manager call close() 
+            close();
         }
     }
 
